@@ -40,7 +40,7 @@ def one_hot(idx, length):
 
 
 
-class graphdataset(Dataset):
+class ReactionDataset(Dataset):
     def __init__(self,data_path,graph_path,target):
         super(Dataset,self).__init__()
         self.graph, self.labels = read_data(data_path,graph_path,target)
@@ -131,7 +131,7 @@ def main():
     data_path='./Data/regression/lograte/lograte.csv'
     graph_path='./Data/regression/lograte/its_origin/lograte.pkl.gz'
     target='lograte'
-    graphdata=graphdataset(data_path,graph_path,target)
+    graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(0))
 
 if __name__=='__main__':
