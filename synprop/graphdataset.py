@@ -76,7 +76,7 @@ class ReactionDataset(Dataset):
                 atom_fea4=one_hot(valence.index(graph.nodes(data=True)[i]['explicit_valence']),len(valence))
             else:
                 atom_fea4=one_hot(6,len(valence))
-            atom_fea=atom_fea1+atom_fea2+atom_fea3+atom_fea4
+            atom_fea=atom_fea1+atom_fea2+atom_fea3
             atom_fea_graph.append(atom_fea)
 
         
