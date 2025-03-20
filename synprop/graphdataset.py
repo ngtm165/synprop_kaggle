@@ -38,6 +38,88 @@ def one_hot(idx, length):
     lst_onehot[idx]=1
     return lst_onehot
 
+def hybridization_to_spdf(hybridization):
+    hybridization = hybridization.lower()
+
+    s = hybridization.count('s')
+    p = hybridization.count('p')
+    d = hybridization.count('d')
+    f = hybridization.count('f')
+
+    p_num = 0
+    d_num = 0
+    f_num = 0
+
+    if 'p' in hybridization:
+        p_index = hybridization.find('p')
+        if p_index + 1 < len(hybridization) and hybridization[p_index + 1].isdigit():
+            num_str = ''
+            for char in hybridization[p_index + 1:]:
+                if char.isdigit():
+                    num_str += char
+                else:
+                    break
+            if num_str:
+                p_num = int(num_str)
+            else:
+                p_num = 1
+
+    if 'd' in hybridization:
+        d_index = hybridization.find('d')
+        if d_index + 1 < len(hybridization) and hybridization[d_index + 1].isdigit():
+            num_str = ''
+            for char in hybridization[d_index + 1:]:
+                if char.isdigit():
+                    num_str += char
+                else:
+                    break
+            if num_str:
+                d_num = int(num_str)
+            else:
+                d_num = 1
+
+    if 'f' in hybridization:
+        f_index = hybridization.find('f')
+        if f_index + 1 < len(hybridization) and hybridization[f_index + 1].isdigit():
+            num_str = ''
+            for char in hybridization[f_index + 1:]:
+                if char.isdigit():
+                    num_str += char
+                else:
+                    break
+            if num_str:
+                f_num = int(num_str)
+            else:
+                f_num = 1
+
+    return [s, p_num, d_num, f_num]
+    
+def count_aromatic_bonds(graph, node):
+    num_aromatic_bonds_u = 0
+    num_aromatic_bonds_v = 0
+    for u, v, data in graph.edges(data=True):
+        if graph.nodes[u]['aromatic']:
+            num_aromatic_bonds_u += 1
+        if graph.nodes[v]['aromatic']:
+            num_aromatic_bonds_v += 1
+    return num_aromatic_bonds_u, num_aromatic_bonds_v
+
+def add_vectors(a, b):
+
+    if len(a) != len(b):
+        raise ValueError("Hai vectơ phải có cùng chiều dài.")
+
+    result = []
+    for i in range(len(a)):
+        result.append(a[i] - b[i])
+    return result
+
+def calculate_standard_order(graph, standard_order):
+    """Tính tổng standard order từ thông tin đồ thị."""
+    standard_orders = []
+    for u, v, data in graph.edges(data=True):
+        standard_orders.append(data['standard_order'])
+    return sum(standard_orders)
 
 
 class ReactionDataset(Dataset):
@@ -61,53 +143,85 @@ class ReactionDataset(Dataset):
         atom_fea_graph=[]
         for i in lst_nodes:
             atom_fea1=one_hot(pt.GetAtomicNumber(graph.nodes(data=True)[i]['element']),len(atom_list))
-            if np.abs(graph.nodes(data=True)[i]['charge']) <3:
-                charge=graph.nodes(data=True)[i]['charge']
-                atom_fea2=one_hot(charge_list.index(charge),len(charge_list))
+            try:
+                charge = atom_data['charge']
+                if abs(charge) < 3:
+                    atom_fea2 = [charge]  # Lấy charge dưới dạng list
+                else:
+                    atom_fea2 = one_hot(5, len(charge_list))  # 'Other' charge (one-hot)
+            except (KeyError, ValueError):  # Xử lý KeyError và ValueError
+                atom_fea2 = one_hot(5, len(charge_list))  # Default 'other' (one-hot)
+                        
+            hybridization_val = atom_data.get('hybridization')
+            if hybridization_val in hybridization:
+                atom_fea3 = hybridization_to_spdf(hybridization_val)
             else:
-                atom_fea2=one_hot(5,len(charge_list))
-
-            if graph.nodes(data=True)[i]['hybridization'] in hybridization:
-                atom_fea3=one_hot(hybridization.index(graph.nodes(data=True)[i]['hybridization']),len(hybridization))
-            else:
-                atom_fea3=one_hot(3,len(hybridization))
+                atom_fea3 = [1, 0, 0, 0] # Giá trị mặc định nếu không có hybridization_val (ví dụ: sp0)
             
-            # if graph.nodes(data=True)[i]['explicit_valence'] in valence:
-            #     atom_fea4=one_hot(valence.index(graph.nodes(data=True)[i]['explicit_valence']),len(valence))
-            # else:
-            #     atom_fea4=one_hot(6,len(valence))
             atom_fea=atom_fea1+atom_fea2+atom_fea3
             atom_fea_graph.append(atom_fea)
 
         
         #bond_feature
         row, col, edge_feat_graph=[], [], []
-        for idx,bond in enumerate(lst_edges_update):
+        for idx, bond in enumerate(lst_edges_update):
             row+=[bond[0],bond[1]]
             col+=[bond[1],bond[0]]
+            
+            # # Thêm các đặc trưng cạnh mới
+            order_0, order_1 = list(graph.edges(data=True))[idx][2]['order']
+            standard_order = list(graph.edges(data=True))[idx][2]['standard_order']
+            
+            changes = []
 
-            if np.max(list(graph.edges(data=True))[idx][2]['order'])==1:
-                edge_fea1=one_hot(0,len(bond_type1))
-            elif np.max(list(graph.edges(data=True))[idx][2]['order'])==2:
-                edge_fea1=one_hot(1,len(bond_type1))
-            elif np.max(list(graph.edges(data=True))[idx][2]['order'])==3:
-                edge_fea1=one_hot(2,len(bond_type1))
+            #one hot encoding cho order và standard_order
+            if order_0 == 1:
+                edge_fea1 = [1,0,0]
+            elif order_0 == 2:
+                edge_fea1 = [1,1,0]
+            elif order_0 == 3:
+                edge_fea1 = [1,2,0]
+            elif order_0 == 1.5:   
+                edge_fea1 = [1,0.5,1]
             else:
-                edge_fea1=one_hot(3,len(bond_type1))
-
-            if list(graph.edges(data=True))[idx][2]['standard_order'] ==0:
-
-                edge_fea2=one_hot(0,len(bond_type2))
-                # edge_fea2=[x*10 for x in edge_fea2]
-            elif list(graph.edges(data=True))[idx][2]['standard_order'] <0:
-
-                edge_fea2=one_hot(1,len(bond_type2))
-                # edge_fea2=[x*20 for x in edge_fea2]
+                edge_fea1 = [0,0,0]
+            
+            if order_1 == 1:
+                edge_fea2 = [1,0,0]
+            elif order_1 == 2:
+                edge_fea2 = [1,1,0]
+            elif order_1 == 3:
+                edge_fea2 = [1,2,0]
+            elif order_1 == 1.5:  
+                edge_fea2 = [1,0.5,1]
             else:
+                edge_fea2 = [0,0,0]
+            
+            # print (edge_fea1, edge_fea2)
+            changes = add_vectors (edge_fea1, edge_fea2) #signma changes, pi changes, conjugated changes
+            # print (changes)
 
-                edge_fea2=one_hot(2,len(bond_type2))
-                # edge_fea2=[x*20 for x in edge_fea2]
-            edge_fea=edge_fea1+edge_fea2
+            if standard_order == 0 and order_0 == order_1: #unchaged
+                edge_fea3 = edge_fea1 + changes[:2]
+            elif standard_order > 0 or standard_order < 0: 
+                edge_fea3 = edge_fea1 + changes[:2] if order_0 > order_1 else edge_fea2 + changes[:2]
+            else: edge_fea3 = [0,0,0,0,0]
+
+            # print (standard_order)
+            total_standard_order = calculate_standard_order(graph, standard_order)
+
+            # Tính toán edge_fea5 dựa trên tổng standard order
+            if total_standard_order == 0:
+                edge_fea5 = [0]
+            elif total_standard_order == 1:
+                edge_fea5 = [1]
+            elif total_standard_order == -1:
+                edge_fea5 = [-1]
+            else:
+                edge_fea5 = [total_standard_order] # handle other cases
+                
+            edge_fea = edge_fea1 + edge_fea2 + edge_fea3 + edge_fea5 + [standard_order] #+ changes + [degree_u, degree_v, common_neighbors, order_ratio]
+
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
 
