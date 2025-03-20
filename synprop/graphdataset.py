@@ -142,7 +142,9 @@ class ReactionDataset(Dataset):
 
         atom_fea_graph=[]
         for i in lst_nodes:
-            atom_fea1=one_hot(pt.GetAtomicNumber(graph.nodes(data=True)[i]['element']),len(atom_list))
+            atom_data = graph.nodes(data=True)[i] #ver 7_mới
+            atom_fea1 = one_hot(pt.GetAtomicNumber(atom_data.get('element',0)), len(atom_list)) # Handle missing 'element'     
+            
             try:
                 charge = atom_data['charge']
                 if abs(charge) < 3:
