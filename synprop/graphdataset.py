@@ -30,13 +30,129 @@ def read_data(data_path, graph_path, target):
         graphs = pickle.load(f)
     # graphs_lst = [i['ITSGraph'][2] for i in graphs]
     graphs_lst = list(graphs.values())  # Chuyển đổi values() thành list
-
+    
     return graphs_lst, labels_lst
 
 def one_hot(idx, length):
-    lst_onehot=[0 for i in range(length)]
-    lst_onehot[idx]=1
+    lst_onehot = [0 for i in range(length)]
+    lst_onehot[idx] = 1
     return lst_onehot
+
+def neighbors_to_quantum_numbers(neighbors):
+    element_to_atomic_number_1 = {
+        'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7, 'O': 8, 'F': 9, 'Ne': 10,
+        'Na': 11, 'Mg': 12, 'Al': 13, 'Si': 14, 'P': 15, 'S': 16, 'Cl': 17, 'Ar': 18,
+        'K': 19, 'Ca': 20, 'Br': 35
+    }
+    if not neighbors:  # Kiểm tra nếu danh sách rỗng
+        return [0]
+    neighbor_atomic_numbers = []
+    for element in neighbors:
+        if element not in element_to_atomic_number_1:
+            neighbor_atomic_numbers.append(0)  # Thêm 0 nếu không tìm thấy
+        else:
+            neighbor_atomic_numbers.append(element_to_atomic_number_1[element])
+    return neighbor_atomic_numbers
+
+def element_to_quantum_numbers(element):
+    element_to_atomic_number = {
+        'H': 1, 'He': 2, 'Li': 3, 'Be': 4, 'B': 5, 'C': 6, 'N': 7, 'O': 8, 'F': 9, 'Ne': 10,
+        'Na': 11, 'Mg': 12, 'Al': 13, 'Si': 14, 'P': 15, 'S': 16, 'Cl': 17, 'Ar': 18,
+        'K': 19, 'Ca': 20, 'Br': 35
+    }
+    if element not in element_to_atomic_number:
+        return None
+    atomic_number = element_to_atomic_number[element]
+    return atomic_number_to_quantum_numbers(atomic_number)
+
+def atomic_number_to_quantum_numbers(atomic_number):
+    electron_configuration = get_electron_configuration(atomic_number)
+    outer_subshell = electron_configuration[-1]
+    # print(atomic_number)
+    n = int(outer_subshell[0])
+    l = 0 if outer_subshell[1] == 's' else 1 if outer_subshell[1] == 'p' else 2 if outer_subshell[1] == 'd' else 3
+
+    num_orbitals = 2 * l + 1
+    num_electrons = int(outer_subshell[2:]) # Cần tính số electron trong phân lớp ngoài cùng
+
+    orbitals = [0] * num_orbitals
+    spin = 1
+    # last_orbital_index = 0  # Theo dõi vị trí electron cuối cùng
+    last_spin = 1 # Thêm biến để theo dõi spin electron cuối cùng
+
+
+    for i in range(num_electrons):
+        orbital_index = i % num_orbitals
+        if orbitals[orbital_index] == 0:
+            orbitals[orbital_index] = spin
+            last_spin = spin # Cập nhật spin electron cuối cùng
+        else:
+            orbitals[orbital_index] = 2
+            last_spin = -spin # Cập nhật spin electron cuối cùng
+        # spin *= -1
+
+    # Ánh xạ orbital_index sang ml
+    ml_map = list(range(-l, l + 1))  # Tạo danh sách [-l, -l+1, ..., l-1, l]
+    ml = ml_map[orbital_index]
+
+    # Xác định ms dựa trên spin cuối cùng
+    ms = 0.5 if last_spin == 1 else -0.5
+    
+    empty_orbitals = []
+    single_electron_orbitals = []
+    full_orbitals = []
+
+    for i, orbital_state in enumerate(orbitals):
+        if orbital_state == 0:
+            empty_orbitals.append(ml_map[i])
+        elif orbital_state == 1 or orbital_state == -1 :
+            single_electron_orbitals.append(ml_map[i])
+            
+
+    for i, orbital_state in enumerate(orbitals):
+        if orbital_state == 2:
+            full_orbitals.append(ml_map[i])
+
+    
+    # Tính tổng số electron lớp ngoài cùng
+    outer_electrons = 0
+    for subshell in electron_configuration:
+        if int(subshell[0]) == n:  # Kiểm tra nếu phân lớp thuộc lớp ngoài cùng
+            outer_electrons += int(subshell[-1])
+    
+    # Tính tổng số orbital lớp ngoài cùng
+    outer_orbitals = 0
+
+    max_l = []
+    if n >= 1:
+        for i in range(min(n, 4)):  # Chỉ lấy tối đa 4 giá trị của l
+            max_l.append(i)
+            outer_orbitals += 2 * i + 1
+            
+    # xac dinh hoa tri
+    e = outer_orbitals if outer_electrons > outer_orbitals else outer_electrons
+        #Thêm logic xử lý riêng cho atomic_number 8 và 9 nếu cần.
+    if atomic_number == 8 or atomic_number == 9:
+        e = len(single_electron_orbitals)
+    
+    return (n, l, ml, ms, e)
+
+
+def get_electron_configuration(atomic_number):
+    subshells = ['1s', '2s', '2p', '3s', '3p', '4s', '3d', '4p', '5s', '4d', '5p', '6s', '4f', '5d', '6p', '7s', '5f', '6d', '7p']
+    max_electrons = [2, 2, 6, 2, 6, 2, 10, 6, 2, 10, 6, 2, 14, 10, 6, 2, 14, 10, 6]
+    electron_configuration = []
+    remaining_electrons = atomic_number
+    for i in range(len(subshells)):
+        if remaining_electrons <= 0:
+            break
+        if remaining_electrons <= max_electrons[i]:
+            electron_configuration.append(subshells[i] + str(remaining_electrons))
+            remaining_electrons = 0
+        else:
+            electron_configuration.append(subshells[i] + str(max_electrons[i]))
+            remaining_electrons -= max_electrons[i]
+    return electron_configuration
 
 def hybridization_to_spdf(hybridization):
     hybridization = hybridization.lower()
@@ -93,16 +209,6 @@ def hybridization_to_spdf(hybridization):
                 f_num = 1
 
     return [s, p_num, d_num, f_num]
-    
-def count_aromatic_bonds(graph, node):
-    num_aromatic_bonds_u = 0
-    num_aromatic_bonds_v = 0
-    for u, v, data in graph.edges(data=True):
-        if graph.nodes[u]['aromatic']:
-            num_aromatic_bonds_u += 1
-        if graph.nodes[v]['aromatic']:
-            num_aromatic_bonds_v += 1
-    return num_aromatic_bonds_u, num_aromatic_bonds_v
 
 def add_vectors(a, b):
 
@@ -221,8 +327,16 @@ class ReactionDataset(Dataset):
                 edge_fea5 = [-1]
             else:
                 edge_fea5 = [total_standard_order] # handle other cases
+
+            #Kiểm tra thuộc aromatic
+            aromatic_val = graph.nodes(data=True)[list(graph.edges(data=True))[idx][0]].get('aromatic', True)
+            aromatic_onehot = [1] if aromatic_val else [0]
+            if aromatic_onehot == [1] and order_0 == 1.5 and order_1 == 1.5:
+                edge_aromatic = [1]
+            else:
+                edge_aromatic = [0]
                 
-            edge_fea = edge_fea1 + edge_fea2 + edge_fea3 + edge_fea5 + [standard_order] #+ changes + [degree_u, degree_v, common_neighbors, order_ratio]
+            edge_fea = edge_fea1 + edge_fea2 + edge_fea3 + edge_fea5 + [standard_order] + edge_aromatic #+ changes + [degree_u, degree_v, common_neighbors, order_ratio]
 
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
@@ -244,11 +358,11 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/lograte/lograte.csv'
-    graph_path='./Data/regression/lograte/its_origin/lograte.pkl.gz'
-    target='lograte'
+    data_path='./Data/regression/phosphatase/phosphatase.csv'
+    graph_path='./Data/regression/phosphatase/its_origin/phosphatase.pkl.gz'
+    target='Conversion'
     graphdata=ReactionDataset(data_path,graph_path,target)
-    print(graphdata.__getitem__(0))
+    print(graphdata.__getitem__(11))
 
 if __name__=='__main__':
     main()
