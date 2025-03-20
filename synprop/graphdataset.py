@@ -159,6 +159,7 @@ class ReactionDataset(Dataset):
                 atom_fea3 = [1, 0, 0, 0] # Giá trị mặc định nếu không có hybridization_val (ví dụ: sp0)
             
             atom_fea=atom_fea1+atom_fea2+atom_fea3
+            print(atom_fea)
             atom_fea_graph.append(atom_fea)
 
         
