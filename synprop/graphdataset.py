@@ -210,6 +210,16 @@ def hybridization_to_spdf(hybridization):
 
     return [s, p_num, d_num, f_num]
 
+def count_aromatic_bonds(graph, node):
+    num_aromatic_bonds_u = 0
+    num_aromatic_bonds_v = 0
+    for u, v, data in graph.edges(data=True):
+        if graph.nodes[u]['aromatic']:
+            num_aromatic_bonds_u += 1
+        if graph.nodes[v]['aromatic']:
+            num_aromatic_bonds_v += 1
+    return num_aromatic_bonds_u, num_aromatic_bonds_v
+
 def add_vectors(a, b):
 
     if len(a) != len(b):
@@ -229,28 +239,40 @@ def calculate_standard_order(graph, standard_order):
 
 
 class ReactionDataset(Dataset):
-    def __init__(self,data_path,graph_path,target):
-        super(Dataset,self).__init__()
-        self.graph, self.labels = read_data(data_path,graph_path,target)
+    def __init__(self, data_path, graph_path, target):
+        super(Dataset, self).__init__()
+        self.graph, self.labels = read_data(data_path, graph_path, target)
 
     def __getitem__(self, index):
-        graph=self.graph[index]
-        lst_nodes=list(graph.nodes())
-        lst_nodes_update=[lst_nodes.index(i) for i in lst_nodes]
-        lst_edges=list(graph.edges())
-        lst_edges_update=[(lst_nodes.index(u),lst_nodes.index(v)) for u,v in lst_edges]
-        label=self.labels[index]
+        graph = self.graph[index]
+        lst_nodes = list(graph.nodes())
+        lst_nodes_update = [lst_nodes.index(i) for i in lst_nodes]
+        lst_edges = list(graph.edges())
+        lst_edges_update = [(lst_nodes.index(u), lst_nodes.index(v)) for u, v in lst_edges]
+        label = self.labels[index]
 
-        #atom_feature
+        #atom features
         pt = Chem.GetPeriodicTable()
-        # atom_fea1=[one_hot(pt.GetAtomicNumber(graph.nodes(data=True)[i]['element']),len(atom_list))for i in lst_nodes]
-        
-
-        atom_fea_graph=[]
-        for i in lst_nodes:
-            atom_data = graph.nodes(data=True)[i] #ver 7_mới
-            atom_fea1 = one_hot(pt.GetAtomicNumber(atom_data.get('element',0)), len(atom_list)) # Handle missing 'element'     
+        # atom_fea_graph = []
+        max_neighbors = 6  # Tìm số neighbors lớn nhất. viết kèm 3 dòng dưới
+        # for i in lst_nodes:
+        #     neighbors = graph.nodes(data=True)[i]['neighbors']
+        #     max_neighbors = max(max_neighbors, len(neighbors))
             
+            # # # Featurize số lượng nguyên tố neighbors
+                        
+            # neighbor_count = len(neighbors)
+            # neighbor_elements = neighbors_to_quantum_numbers(neighbors)
+            # padded_neighbors = neighbor_elements + [0] * (max_neighbors - len(neighbor_elements))
+            # print(padded_neighbors)
+
+        atom_fea_graph = []
+        
+        for i in lst_nodes:
+            
+            atom_data = graph.nodes(data=True)[i] #ver 7_mới
+            atom_fea1 = one_hot(pt.GetAtomicNumber(atom_data.get('element',0)), len(atom_list)) # Handle missing 'element'
+
             try:
                 charge = atom_data['charge']
                 if abs(charge) < 3:
@@ -266,7 +288,57 @@ class ReactionDataset(Dataset):
             else:
                 atom_fea3 = [1, 0, 0, 0] # Giá trị mặc định nếu không có hybridization_val (ví dụ: sp0)
             
-            atom_fea=atom_fea1+atom_fea2+atom_fea3
+
+            # valence_val = atom_data.get('explicit_valence')
+            # atom_fea4 = [valence_val]
+            
+
+            # Tích hợp số lượng tử
+            element = graph.nodes(data=True)[i]['element']
+            quantum_numbers = element_to_quantum_numbers(element)
+            if quantum_numbers:
+                n, l, ml, ms, e = quantum_numbers
+                quantum_features = [n, l, ml, ms]  # Chuyển thành list
+                n_onehot = one_hot(n - 1, 7)  # Giả sử n tối đa là 7
+                l_onehot = one_hot(l, 4)  # l có thể từ 0 đến 3
+                ml_onehot = one_hot(ml + 3, 7)  # Giả sử ml có thể từ -3 đến 3
+                ms_onehot = [1, 0] if ms == 0.5 else [0, 1]
+            else:
+                quantum_features = [0, 0, 0, 0]  # Giá trị mặc định nếu không tìm thấy
+                n_onehot = [0] * 7
+                l_onehot = [0] * 4
+                ml_onehot = [0] * 7
+                ms_onehot = [0, 0]
+                
+            quantum_onehots = n_onehot + l_onehot + ml_onehot + ms_onehot
+
+            # Liên kết tối đa (valence electrons)
+            e_max = [e]
+            # print (e)
+            
+            # Mã hóa one-hot cho các thuộc tính bổ sung
+            hcount_val = atom_data.get('hcount', 0)
+            hcount = [hcount_val]  # Giả sử hcount tối đa là 4
+
+            # aromatic_val = atom_data.get('aromatic', False)
+            # aromatic_onehot = [1] if aromatic_val else [0]
+
+            in_ring_val = atom_data.get('in_ring', False)
+            in_ring_onehot = [1] if in_ring_val else [0] 
+            
+            # # Featurize số lượng nguyên tố neighbors
+
+            neighbors = graph.nodes(data=True)[i]['neighbors']
+            # neighbors = atom_data.get('neighbors', [])
+            # max_neighbors = max(max_neighbors, len(neighbors))
+            
+            neighbor_count = len(neighbors)
+            neighbor_elements = neighbors_to_quantum_numbers(neighbors)
+            padded_neighbors = neighbor_elements + [0] * (max_neighbors - len(neighbor_elements))
+            # print(padded_neighbors)
+
+            atom_fea = atom_fea2 + atom_fea3 + quantum_features + e_max + hcount + [neighbor_count] #+ padded_neighbors #+ aromatic_onehot #+ padded_neighbors
+
             atom_fea_graph.append(atom_fea)
 
         
