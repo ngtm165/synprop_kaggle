@@ -208,7 +208,14 @@ def hybridization_to_spdf(hybridization):
             else:
                 f_num = 1
 
-    return [s, p_num, d_num, f_num]
+    # return [s, p_num, d_num, f_num]
+    
+    total = s + p_num + d_num + f_num
+
+    if total == 0:
+      return [0,0,0,0]
+
+    return [s / total, p_num / total, d_num / total, f_num / total]
 
 def count_aromatic_bonds(graph, node):
     num_aromatic_bonds_u = 0
