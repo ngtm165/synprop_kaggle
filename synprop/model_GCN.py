@@ -20,7 +20,6 @@ class model(nn.Module):
     def __init__(
         self,
         node_feat,
-        edge_feat, #mới thêm dô dù không ý nghĩa gì
         out_dim=1,
         num_layer=3,
         node_hid_feats=300,
