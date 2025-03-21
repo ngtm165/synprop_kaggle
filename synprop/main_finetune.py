@@ -10,7 +10,7 @@ import sys
 root_dir=Path(__file__).resolve().parents[1]
 sys.path.append(str(root_dir))
 os.chdir(str(root_dir))
-from synprop.finetune_graph_GCN import finetune
+from synprop.finetune_graph_GIN import finetune
 
 
 if __name__ == "__main__":
