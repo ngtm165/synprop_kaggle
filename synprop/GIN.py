@@ -8,7 +8,7 @@ class GNN(nn.Module):
     def __init__(
         self,
         node_in_feats,
-        edge_in_feats,  # GIN không sử dụng edge features trực tiếp
+                      # GIN không sử dụng edge features trực tiếp, thử bỏ 'edge_in_feats'
         depth=5,
         node_hid_feats=300,
         readout_feats=1024,

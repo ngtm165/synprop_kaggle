@@ -20,7 +20,7 @@ class model(nn.Module):
     def __init__(
         self,
         node_feat,
-        edge_feat,  # edge_feat is not used in GIN, but keep it for compatibility
+                      # edge_feat is not used in GIN, but keep it for compatibility 'edge_feat,'
         out_dim=1,
         num_layer=3,
         node_hid_feats=300,
@@ -31,7 +31,7 @@ class model(nn.Module):
     ):
         super(model, self).__init__()
         emb_dim = 1024
-        self.gnn = GNN(node_feat, edge_feat)  # Use GNN
+        self.gnn = GNN(node_feat)  # Use GNN, thử bỏ edge_feat
         # if readout_option:
         #     emb_dim = readout_feats
         # else:
