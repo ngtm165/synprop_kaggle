@@ -288,6 +288,20 @@ class ReactionDataset(Dataset):
                     atom_fea2 = one_hot(5, len(charge_list))  # 'Other' charge (one-hot)
             except (KeyError, ValueError):  # Xử lý KeyError và ValueError
                 atom_fea2 = one_hot(5, len(charge_list))  # Default 'other' (one-hot)
+
+            
+            charge_1 = atom_data['typesGH'][0][3] 
+            charge_2 = atom_data['typesGH'][1][3] 
+            charge_change = charge_2 - charge_1
+            # if charge_change == 0 and charge_1 == charge_2: #ver_1
+            #     charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
+            # elif charge_change > 0 or charge_change < 0:
+            #     if abs(charge_1) > 0: 
+            #         charge_atom = [charge_1] + [charge_change] 
+            #     elif abs(charge_2) > 0: 
+            #         charge_atom = [charge_2] + [charge_change] 
+
+            charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
                         
             hybridization_val = atom_data.get('hybridization')
             if hybridization_val in hybridization:
@@ -336,15 +350,42 @@ class ReactionDataset(Dataset):
             # # Featurize số lượng nguyên tố neighbors
 
             neighbors = graph.nodes(data=True)[i]['neighbors']
-            # neighbors = atom_data.get('neighbors', [])
-            # max_neighbors = max(max_neighbors, len(neighbors))
             
             neighbor_count = len(neighbors)
-            neighbor_elements = neighbors_to_quantum_numbers(neighbors)
-            padded_neighbors = neighbor_elements + [0] * (max_neighbors - len(neighbor_elements))
-            # print(padded_neighbors)
 
-            atom_fea = atom_fea2 + atom_fea3 + quantum_features + e_max + hcount + [neighbor_count] #+ padded_neighbors #+ aromatic_onehot #+ padded_neighbors
+
+            # # Featurize số lượng nguyên tố neighbors
+
+            neighbor_1 = atom_data['typesGH'][0][4] 
+            neighbor_2 = atom_data['typesGH'][1][4] 
+
+            neighbor_count_1 = len(neighbor_1)
+            neighbor_count_2 = len(neighbor_2)
+            neighbor_change = neighbor_count_2 - neighbor_count_1
+
+            neighbor_elements_1 = neighbors_to_quantum_numbers(neighbor_1)
+            neighbor_elements_2 = neighbors_to_quantum_numbers(neighbor_2)
+
+
+            if neighbor_change == 0:
+                if neighbor_elements_1 != neighbor_elements_2:  # Kiểm tra sự khác biệt về nội dung
+                    combined_elements = list(set(neighbor_elements_1 + neighbor_elements_2))
+                    padded = combined_elements + [0] * (max_neighbors - len(combined_elements))
+                else:
+                    padded = neighbor_elements_1 + [0] * (max_neighbors - len(neighbor_elements_1))
+            elif abs(neighbor_change) > 0:
+                if neighbor_count_1 > neighbor_count_2:
+                    if all(item in neighbor_elements_1 for item in neighbor_elements_2): #Check if neighbor_elements_2 is subset of neighbor_elements_1
+                        padded = neighbor_elements_1 + [0] * (max_neighbors - len(neighbor_elements_1))
+                    else:
+                        combined_elements = list(set(neighbor_elements_1 + neighbor_elements_2))
+                        padded = combined_elements + [0] * (max_neighbors - len(combined_elements))
+                else:
+                    combined_elements = list(set(neighbor_elements_1 + neighbor_elements_2))
+                    padded = combined_elements + [0] * (max_neighbors - len(combined_elements))
+
+
+            atom_fea = charge_atom + atom_fea3 + quantum_features + e_max + hcount + [neighbor_count_1] + [neighbor_count_2] #+ padded_neighbors #+ aromatic_onehot #+ padded_neighbors
 
             atom_fea_graph.append(atom_fea)
 
@@ -424,7 +465,7 @@ class ReactionDataset(Dataset):
         edge_attr=torch.tensor(np.array(edge_feat_graph),dtype=torch.float)
         node_attr=torch.tensor(np.array(atom_fea_graph),dtype=torch.float)
         y=torch.tensor(label,dtype=torch.float)
-        data= Data(x=node_attr,y=y,edge_index=edge_index) ##thử bỏ ',edge_attr=edge_attr'
+        data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr ) ##thử bỏ ',edge_attr=edge_attr'
 
         # print(edge_index)
         # print(edge_attr.shape)
@@ -437,9 +478,9 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/phosphatase/phosphatase.csv'
-    graph_path='./Data/regression/phosphatase/its_origin/phosphatase.pkl.gz'
-    target='Conversion'
+    data_path='./Data/regression/rad6re/rad6re.csv'
+    graph_path='./Data/regression/rad6re/its_origin/rad6re.pkl.gz'
+    target='dh'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(11))
 
