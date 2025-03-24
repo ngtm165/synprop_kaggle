@@ -262,17 +262,7 @@ class ReactionDataset(Dataset):
         pt = Chem.GetPeriodicTable()
         # atom_fea_graph = []
         max_neighbors = 6  # Tìm số neighbors lớn nhất. viết kèm 3 dòng dưới
-        # for i in lst_nodes:
-        #     neighbors = graph.nodes(data=True)[i]['neighbors']
-        #     max_neighbors = max(max_neighbors, len(neighbors))
-            
-            # # # Featurize số lượng nguyên tố neighbors
-                        
-            # neighbor_count = len(neighbors)
-            # neighbor_elements = neighbors_to_quantum_numbers(neighbors)
-            # padded_neighbors = neighbor_elements + [0] * (max_neighbors - len(neighbor_elements))
-            # print(padded_neighbors)
-
+        
         atom_fea_graph = []
         
         for i in lst_nodes:
@@ -293,15 +283,15 @@ class ReactionDataset(Dataset):
             charge_1 = atom_data['typesGH'][0][3] 
             charge_2 = atom_data['typesGH'][1][3] 
             charge_change = charge_2 - charge_1
-            # if charge_change == 0 and charge_1 == charge_2: #ver_1
-            #     charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
-            # elif charge_change > 0 or charge_change < 0:
-            #     if abs(charge_1) > 0: 
-            #         charge_atom = [charge_1] + [charge_change] 
-            #     elif abs(charge_2) > 0: 
-            #         charge_atom = [charge_2] + [charge_change] 
+            if charge_change == 0 and charge_1 == charge_2: #ver_1
+                 charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
+            elif charge_change > 0 or charge_change < 0:
+                 if abs(charge_1) > 0: 
+                     charge_atom = [charge_1] + [charge_change] 
+                 elif abs(charge_2) > 0: 
+                     charge_atom = [charge_2] + [charge_change] 
 
-            charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
+            #  charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
                         
             hybridization_val = atom_data.get('hybridization')
             if hybridization_val in hybridization:
@@ -338,9 +328,12 @@ class ReactionDataset(Dataset):
             # print (e)
             
             # Mã hóa one-hot cho các thuộc tính bổ sung
-            hcount_val = atom_data.get('hcount', 0)
-            hcount = [hcount_val]  # Giả sử hcount tối đa là 4
-
+            hcount_1 = atom_data['typesGH'][0][2]
+            hcount_2 = atom_data['typesGH'][0][2]
+            hcount_change = hcount_2 - hcount_1
+            hcount = [hcount_1] + [hcount_2] + [hcount_change]
+            
+            
             # aromatic_val = atom_data.get('aromatic', False)
             # aromatic_onehot = [1] if aromatic_val else [0]
 
