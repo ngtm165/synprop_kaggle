@@ -268,30 +268,20 @@ class ReactionDataset(Dataset):
         for i in lst_nodes:
             
             atom_data = graph.nodes(data=True)[i] #ver 7_mới
-            atom_fea1 = one_hot(pt.GetAtomicNumber(atom_data.get('element',0)), len(atom_list)) # Handle missing 'element'
-
-            try:
-                charge = atom_data['charge']
-                if abs(charge) < 3:
-                    atom_fea2 = [charge]  # Lấy charge dưới dạng list
-                else:
-                    atom_fea2 = one_hot(5, len(charge_list))  # 'Other' charge (one-hot)
-            except (KeyError, ValueError):  # Xử lý KeyError và ValueError
-                atom_fea2 = one_hot(5, len(charge_list))  # Default 'other' (one-hot)
 
             
             charge_1 = atom_data['typesGH'][0][3] 
             charge_2 = atom_data['typesGH'][1][3] 
             charge_change = charge_2 - charge_1
-            if charge_change == 0 and charge_1 == charge_2: #ver_1
-                 charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
-            elif charge_change > 0 or charge_change < 0:
-                 if abs(charge_1) > 0: 
-                     charge_atom = [charge_1] + [charge_change] 
-                 elif abs(charge_2) > 0: 
-                     charge_atom = [charge_2] + [charge_change] 
+            # if charge_change == 0 and charge_1 == charge_2: #ver_1
+            #      charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
+            # elif charge_change > 0 or charge_change < 0:
+            #      if abs(charge_1) > 0: 
+            #          charge_atom = [charge_1] + [charge_change] 
+            #      elif abs(charge_2) > 0: 
+            #          charge_atom = [charge_2] + [charge_change] 
 
-            #  charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
+            charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
                         
             hybridization_val = atom_data.get('hybridization')
             if hybridization_val in hybridization:
@@ -339,13 +329,7 @@ class ReactionDataset(Dataset):
 
             in_ring_val = atom_data.get('in_ring', False)
             in_ring_onehot = [1] if in_ring_val else [0] 
-            
-            # # Featurize số lượng nguyên tố neighbors
-
-            neighbors = graph.nodes(data=True)[i]['neighbors']
-            
-            neighbor_count = len(neighbors)
-
+        
 
             # # Featurize số lượng nguyên tố neighbors
 
