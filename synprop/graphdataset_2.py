@@ -283,7 +283,7 @@ class ReactionDataset(Dataset):
 
             # charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
             
-            # charge_atom = [charge_1] + [charge_2] #ver_3
+            charge_atom = [charge_1] + [charge_2] #ver_3
         
             hybridization_val = atom_data.get('hybridization')
             if hybridization_val in hybridization:
