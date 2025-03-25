@@ -273,15 +273,15 @@ class ReactionDataset(Dataset):
             charge_1 = atom_data['typesGH'][0][3] 
             charge_2 = atom_data['typesGH'][1][3] 
             charge_change = charge_2 - charge_1
-            # if charge_change == 0 and charge_1 == charge_2: #ver_1
-            #      charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
-            # elif charge_change > 0 or charge_change < 0:
-            #      if abs(charge_1) > 0: 
-            #          charge_atom = [charge_1] + [charge_change] 
-            #      elif abs(charge_2) > 0: 
-            #          charge_atom = [charge_2] + [charge_change] 
+            if charge_change == 0 and charge_1 == charge_2: #ver_1
+                 charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
+            elif charge_change > 0 or charge_change < 0:
+                 if abs(charge_1) > 0: 
+                     charge_atom = [charge_1] + [charge_change] 
+                 elif abs(charge_2) > 0: 
+                     charge_atom = [charge_2] + [charge_change] 
 
-            charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
+            # charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
                         
             hybridization_val = atom_data.get('hybridization')
             if hybridization_val in hybridization:
