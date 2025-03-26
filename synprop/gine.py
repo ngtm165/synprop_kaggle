@@ -9,10 +9,10 @@ class GNN(nn.Module):
         self,
         node_in_feats,
         edge_in_feats,
-        depth=6, #default = 5; opt = 6
-        node_hid_feats=300,
+        depth=5, #default = 5; opt = 6
+        node_hid_feats=1700, #default = 300; opt = 1700
         readout_feats=1024,
-        dr=0.2, #default = 0.1; opt = 0.2
+        dr=0.25, #default = 0.1; opt = 0.2
         readout_option=True,
     ):
         super(GNN, self).__init__()
