@@ -27,7 +27,7 @@ class model(nn.Module):
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
-        drop_ratio=0.1,
+        drop_ratio=0, #default = 0.1; opt = 0
     ):
         super(model, self).__init__()
         emb_dim=1024
