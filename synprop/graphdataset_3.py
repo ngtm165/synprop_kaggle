@@ -402,7 +402,7 @@ class ReactionDataset(Dataset):
             elif order_0 == 1.5:   
                 edge_fea1 = [1,0.5] + bond_con_0
             else:
-                edge_fea1 = [0,0] + bond_con_0
+                edge_fea1 = [0,0,0]
             
             if order_1 == 1:
                 edge_fea2 = [1,0] + bond_con_1
@@ -413,7 +413,7 @@ class ReactionDataset(Dataset):
             elif order_1 == 1.5:  
                 edge_fea2 = [1,0.5] + bond_con_1
             else:
-                edge_fea2 = [0,0] + bond_con_1
+                edge_fea2 = [0,0,0]
             
             # print (edge_fea1, edge_fea2)
             changes = add_vectors (edge_fea1, edge_fea2) #signma changes, pi changes, conjugated changes
