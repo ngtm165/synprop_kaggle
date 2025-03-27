@@ -22,20 +22,17 @@ class model(nn.Module):
         node_feat,
         edge_feat,
         out_dim=1,
-        num_layer=3, #default = 3; opt = 2
-        node_hid_feats=300, #default = 300; opt = 1700
+        num_layer=3, #default = 3
+        node_hid_feats=300, #default = 300
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
-        drop_ratio=0.1, #default = 0.1; opt = 0
+        drop_ratio=0.1, #default = 0.1
     ):
         super(model, self).__init__()
         emb_dim=1024
         self.gnn = GNN(node_feat,edge_feat)
-        # if readout_option:
-        #     emb_dim = readout_feats
-        # else:
-        #     emb_dim = node_hid_feats
+
 
         self.predict = nn.Sequential(
             torch.nn.Linear(emb_dim, predict_hidden_feats),
@@ -68,7 +65,7 @@ def train(
     n_epochs = epochs
 
     loss_fn = torch.nn.MSELoss()
-    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5)
+    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-4) ##default: lr=5e-4, weight_decay=1e-5
 
     for epoch in range(n_epochs):
         # training
