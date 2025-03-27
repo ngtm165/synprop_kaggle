@@ -65,7 +65,7 @@ def train(
     n_epochs = epochs
 
     loss_fn = torch.nn.MSELoss()
-    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-1) ##default: lr=5e-4, weight_decay=1e-5
+    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-6) ##default: lr=5e-4, weight_decay=1e-5
 
     for epoch in range(n_epochs):
         # training
