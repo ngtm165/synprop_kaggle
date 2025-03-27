@@ -12,7 +12,7 @@ class GNN(nn.Module):
         depth=5, #default = 5; opt = 3
         node_hid_feats=300, #default = 300; opt = 1700
         readout_feats=1024,
-        dr=0.1, #default = 0.1; opt = 0.2
+        dr=0.15, #default = 0.1; opt = 0.2
         readout_option=True,
     ):
         super(GNN, self).__init__()
