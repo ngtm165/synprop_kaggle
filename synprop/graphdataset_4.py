@@ -329,17 +329,17 @@ class ReactionDataset(Dataset):
             if h_val_2 == 0:
                 sigma_2 = hcount_2 + h_val_2 + neighbor_count_2   
             else: sigma_2 = neighbor_count_2         
-            sigma = [sigma_1] + [sigma_2]
 
             lone_1 = lone_pairs (total_1, sigma_1)
             lone_2 = lone_pairs (total_2, sigma_2)
-            lone = [lone_1] + [lone_2]
 
             # print(f'total_1: {total_1}, total_2: {total_2}')
             # print(lone_1, lone_2)
+            atom_hybrid_p_1 = atom_hybrid_1 + [sigma_1] + [lone_1]
+            atom_hybrid_p_2 = atom_hybrid_2 + [sigma_2] + [lone_2]
+            atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
 
-            atom_fea = quantum_features + e_max + charge_atom + hcount + atom_hybrid + sigma + lone + [neighbor_count_1] + [neighbor_count_2] 
-
+            atom_fea = quantum_features + e_max + charge_atom + hcount + atom_hybrid_p + [neighbor_count_1] + [neighbor_count_2] 
             atom_fea_graph.append(atom_fea)
 
         
