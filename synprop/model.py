@@ -22,12 +22,12 @@ class model(nn.Module):
         node_feat,
         edge_feat,
         out_dim=1,
-        num_layer=2, #default = 3; opt = 2
+        num_layer=3, #default = 3; opt = 2
         node_hid_feats=300, #default = 300; opt = 1700
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
-        drop_ratio=0.15, #default = 0.1; opt = 0
+        drop_ratio=0.1, #default = 0.1; opt = 0
     ):
         super(model, self).__init__()
         emb_dim=1024

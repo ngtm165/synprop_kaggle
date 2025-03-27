@@ -215,17 +215,11 @@ def hybridization_to_spdf(hybridization):
     if total == 0:
       return [0,0,0,0]
 
-    return [s / total, p_num / total, d_num / total, f_num / total]
+    return [s / total, p_num / total, d_num / total, f_num / total], total
 
-def count_aromatic_bonds(graph, node):
-    num_aromatic_bonds_u = 0
-    num_aromatic_bonds_v = 0
-    for u, v, data in graph.edges(data=True):
-        if graph.nodes[u]['aromatic']:
-            num_aromatic_bonds_u += 1
-        if graph.nodes[v]['aromatic']:
-            num_aromatic_bonds_v += 1
-    return num_aromatic_bonds_u, num_aromatic_bonds_v
+def lone_pairs (total, sigma):
+    lone = total - sigma 
+    return lone 
 
 def add_vectors(a, b):
 
@@ -245,7 +239,7 @@ def calculate_standard_order(graph, standard_order):
     return sum(standard_orders)
 
 
-class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
+class ReactionDataset(Dataset):
     def __init__(self, data_path, graph_path, target):
         super(Dataset, self).__init__()
         self.graph, self.labels = read_data(data_path, graph_path, target)
@@ -269,20 +263,9 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
             
             atom_data = graph.nodes(data=True)[i] #ver 7_mới
 
-            
+            #charge
             charge_1 = atom_data['typesGH'][0][3] 
-            charge_2 = atom_data['typesGH'][1][3] 
-            # charge_change = charge_2 - charge_1
-            # if charge_change == 0 and charge_1 == charge_2: #ver_1
-            #      charge_atom = [charge_1] + [charge_change] #put charge_change into a list.
-            # elif charge_change > 0 or charge_change < 0:
-            #      if abs(charge_1) > 0: 
-            #          charge_atom = [charge_1] + [charge_change] 
-            #      elif abs(charge_2) > 0: 
-            #          charge_atom = [charge_2] + [charge_change] 
-
-            # charge_atom = [charge_1] + [charge_2] + [charge_change] #ver_2
-            
+            charge_2 = atom_data['typesGH'][1][3]
             charge_atom = [charge_1] + [charge_2] #ver_3
         
 
@@ -290,15 +273,8 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
             hybrid_1 = atom_data['typesGH'][0][4] 
             hybrid_2 = atom_data['typesGH'][1][4] 
 
-            if hybrid_1 in hybridization:
-                atom_hybrid_1 = hybridization_to_spdf(hybrid_1)
-            else:
-                atom_hybrid_1 = [1, 0, 0, 0] 
-
-            if hybrid_2 in hybridization:
-                atom_hybrid_2 = hybridization_to_spdf(hybrid_2)
-            else:
-                atom_hybrid_2 = [1, 0, 0, 0] 
+            atom_hybrid_1, total_1 = hybridization_to_spdf(hybrid_1)
+            atom_hybrid_2, total_2 = hybridization_to_spdf(hybrid_2)
 
             atom_hybrid = atom_hybrid_1 + atom_hybrid_2
 
@@ -323,22 +299,12 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
 
             # Liên kết tối đa (valence electrons)
             e_max = [e]
-            # print (e)
             
             # Mã hóa one-hot cho các thuộc tính bổ sung
             hcount_1 = atom_data['typesGH'][0][2]
-            hcount_2 = atom_data['typesGH'][0][2]
+            hcount_2 = atom_data['typesGH'][1][2]
             hcount_change = hcount_2 - hcount_1
-            hcount = [hcount_1] + [hcount_2] #+ [hcount_change]
-            
-            
-            # aromatic_val = atom_data.get('aromatic', False)
-            # aromatic_onehot = [1] if aromatic_val else [0]
-
-            in_ring_val = atom_data.get('in_ring', False)
-            in_ring_onehot = [1] if in_ring_val else [0] 
         
-
             # # Featurize số lượng nguyên tố neighbors
 
             neighbor_1 = atom_data['typesGH'][0][5] 
@@ -351,26 +317,28 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
             neighbor_elements_1 = neighbors_to_quantum_numbers(neighbor_1)
             neighbor_elements_2 = neighbors_to_quantum_numbers(neighbor_2)
 
+            #Kiểm tra thuyết
+            h_val_1 = neighbor_elements_1.count(1)
+            h_val_2 = neighbor_elements_2.count(1)
+            hcount = [hcount_1 + h_val_1] + [hcount_2 + h_val_2] 
 
-            if neighbor_change == 0:
-                if neighbor_elements_1 != neighbor_elements_2:  # Kiểm tra sự khác biệt về nội dung
-                    combined_elements = list(set(neighbor_elements_1 + neighbor_elements_2))
-                    padded = combined_elements + [0] * (max_neighbors - len(combined_elements))
-                else:
-                    padded = neighbor_elements_1 + [0] * (max_neighbors - len(neighbor_elements_1))
-            elif abs(neighbor_change) > 0:
-                if neighbor_count_1 > neighbor_count_2:
-                    if all(item in neighbor_elements_1 for item in neighbor_elements_2): #Check if neighbor_elements_2 is subset of neighbor_elements_1
-                        padded = neighbor_elements_1 + [0] * (max_neighbors - len(neighbor_elements_1))
-                    else:
-                        combined_elements = list(set(neighbor_elements_1 + neighbor_elements_2))
-                        padded = combined_elements + [0] * (max_neighbors - len(combined_elements))
-                else:
-                    combined_elements = list(set(neighbor_elements_1 + neighbor_elements_2))
-                    padded = combined_elements + [0] * (max_neighbors - len(combined_elements))
+            if h_val_1 == 0:
+                sigma_1 = hcount_1 + h_val_1 + neighbor_count_1
+            else: sigma_1 = neighbor_count_1
 
+            if h_val_2 == 0:
+                sigma_2 = hcount_2 + h_val_2 + neighbor_count_2   
+            else: sigma_2 = neighbor_count_2         
+            sigma = [sigma_1] + [sigma_2]
 
-            atom_fea = charge_atom + atom_hybrid + quantum_features + e_max + hcount + [neighbor_count_1] + [neighbor_count_2] #+ padded_neighbors #+ aromatic_onehot #+ padded_neighbors
+            lone_1 = lone_pairs (total_1, sigma_1)
+            lone_2 = lone_pairs (total_2, sigma_2)
+            lone = [lone_1] + [lone_2]
+
+            # print(f'total_1: {total_1}, total_2: {total_2}')
+            # print(lone_1, lone_2)
+
+            atom_fea = quantum_features + e_max + charge_atom + hcount + atom_hybrid + sigma + lone + [neighbor_count_1] + [neighbor_count_2] 
 
             atom_fea_graph.append(atom_fea)
 
@@ -391,7 +359,16 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
             con_0, con_1 = list(graph.edges(data=True))[idx][2]['conjugated']
             bond_con_0 = [1] if con_0 == True else [0]
             bond_con_1 = [1] if con_1 == True else [0]
-            # print(bond_con_0, bond_con_1)
+
+            # # Kiểm tra trạng thái
+            # if con_0 == True:
+            #     bond_exist_0 = [1]
+            # elif con_0 == False:
+            #     bond_exist_0 = [1]
+            # else: 
+            #     bond_exist_0 = [0]
+
+            # bond_exist_1 = [1] if con_1 == True or con_1 == False else [0]
 
             if order_0 == 1:
                 edge_fea1 = [1,0] + bond_con_0
@@ -415,7 +392,6 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
             else:
                 edge_fea2 = [0,0,0]
             
-            # print (edge_fea1, edge_fea2)
             changes = add_vectors (edge_fea1, edge_fea2) #signma changes, pi changes, conjugated changes
             # print (changes)
 
@@ -444,8 +420,9 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
                 edge_aromatic = [1]
             else:
                 edge_aromatic = [0]
-                
-            edge_fea = edge_fea1 + edge_fea2 + edge_fea3 + edge_aromatic #+ edge_fea5 + [standard_order] ##+ changes + [degree_u, degree_v, common_neighbors, order_ratio]
+            
+            # print(edge_fea3)
+            edge_fea = edge_fea1 + edge_fea2 + changes[:2] + edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3
 
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
@@ -455,6 +432,10 @@ class ReactionDataset(Dataset): ##đang cho số rất tốt với default!!
         node_attr=torch.tensor(np.array(atom_fea_graph),dtype=torch.float)
         y=torch.tensor(label,dtype=torch.float)
         data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr) ##thử bỏ ',edge_attr=edge_attr'
+
+        # print(edge_index)
+        # print(edge_attr.shape)
+
 
         return data
 
@@ -467,7 +448,7 @@ def main():
     graph_path='./Data/regression/phosphatase/its_new/phosphatase.pkl.gz'
     target='Conversion'
     graphdata=ReactionDataset(data_path,graph_path,target)
-    print(graphdata.__getitem__(10))
+    print(graphdata.__getitem__(8))
 
 if __name__=='__main__':
     main()
