@@ -27,7 +27,7 @@ class model(nn.Module):
         readout_feats=1024,
         predict_hidden_feats=512,
         readout_option=False,
-        drop_ratio=0.15, #default = 0.1
+        drop_ratio=0.1, #default = 0.1
     ):
         super(model, self).__init__()
         emb_dim=1024
@@ -65,7 +65,7 @@ def train(
     n_epochs = epochs
 
     loss_fn = torch.nn.MSELoss()
-    optimizer = Adam(net.parameters(), lr=1e-4, weight_decay=1e-3) ##default: lr=5e-4, weight_decay=1e-5
+    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5) ##default: lr=5e-4, weight_decay=1e-5
 
     for epoch in range(n_epochs):
         # training
