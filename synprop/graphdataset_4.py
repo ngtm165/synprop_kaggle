@@ -320,6 +320,7 @@ class ReactionDataset(Dataset):
             #Kiểm tra thuyết
             h_val_1 = neighbor_elements_1.count(1)
             h_val_2 = neighbor_elements_2.count(1)
+
             hcount = [hcount_1 + h_val_1] + [hcount_2 + h_val_2] 
 
             if h_val_1 == 0:
@@ -333,13 +334,11 @@ class ReactionDataset(Dataset):
             lone_1 = lone_pairs (total_1, sigma_1)
             lone_2 = lone_pairs (total_2, sigma_2)
 
-            # print(f'total_1: {total_1}, total_2: {total_2}')
-            # print(lone_1, lone_2)
             atom_hybrid_p_1 = atom_hybrid_1 + [sigma_1] + [lone_1]
             atom_hybrid_p_2 = atom_hybrid_2 + [sigma_2] + [lone_2]
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
 
-            atom_fea = quantum_features + e_max + charge_atom + hcount + atom_hybrid_p + [neighbor_count_1] + [neighbor_count_2] 
+            atom_fea = quantum_features + e_max + charge_1 + [hcount_1 + h_val_1] + atom_hybrid_p_1 + [neighbor_count_1] + charge_2 + [hcount_2 + h_val_2] + atom_hybrid_p_2 + [neighbor_count_2] 
             atom_fea_graph.append(atom_fea)
 
         
@@ -359,16 +358,6 @@ class ReactionDataset(Dataset):
             con_0, con_1 = list(graph.edges(data=True))[idx][2]['conjugated']
             bond_con_0 = [1] if con_0 == True else [0]
             bond_con_1 = [1] if con_1 == True else [0]
-
-            # # Kiểm tra trạng thái
-            # if con_0 == True:
-            #     bond_exist_0 = [1]
-            # elif con_0 == False:
-            #     bond_exist_0 = [1]
-            # else: 
-            #     bond_exist_0 = [0]
-
-            # bond_exist_1 = [1] if con_1 == True or con_1 == False else [0]
 
             if order_0 == 1:
                 edge_fea1 = [1,0] + bond_con_0
@@ -422,7 +411,7 @@ class ReactionDataset(Dataset):
                 edge_aromatic = [0]
             
             # print(edge_fea3)
-            edge_fea = edge_fea1 + edge_fea2 + edge_fea3 + edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
+            edge_fea = edge_fea1 + edge_fea2 #+ edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
 
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
