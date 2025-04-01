@@ -259,6 +259,7 @@ class ReactionDataset(Dataset):
         
         atom_fea_graph = []
         atom_hybrid_change = []
+        hcount_change = []
 
         for i in lst_nodes:
             
@@ -305,7 +306,6 @@ class ReactionDataset(Dataset):
             # Mã hóa one-hot cho các thuộc tính bổ sung
             hcount_1 = atom_data['typesGH'][0][2]
             hcount_2 = atom_data['typesGH'][1][2]
-            hcount_change = hcount_1 - hcount_2
         
             # # Featurize số lượng nguyên tố neighbors
 
@@ -322,8 +322,11 @@ class ReactionDataset(Dataset):
             #Kiểm tra thuyết
             h_val_1 = neighbor_elements_1.count(1)
             h_val_2 = neighbor_elements_2.count(1)
-
+            h_1 = [hcount_1 + h_val_1] 
+            h_2 = [hcount_2 + h_val_2] 
             hcount = [hcount_1 + h_val_1] + [hcount_2 + h_val_2] 
+
+            hcount_change = add_vectors (h_1, h_2)
 
             if h_val_1 == 0:
                 sigma_1 = hcount_1 + h_val_1 + neighbor_count_1
@@ -341,7 +344,7 @@ class ReactionDataset(Dataset):
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
 
-            atom_fea = quantum_features + e_max + [charge_change] + [hcount_change] + atom_hybrid_change + [neighbor_change]  
+            atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + [h_1] + [hcount_change] + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change]  
             atom_fea_graph.append(atom_fea)
 
         
