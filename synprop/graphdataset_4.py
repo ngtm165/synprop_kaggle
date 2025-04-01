@@ -260,6 +260,7 @@ class ReactionDataset(Dataset):
         atom_fea_graph = []
         atom_hybrid_change = []
         hcount_change = []
+        hybrid_change = []
 
         for i in lst_nodes:
             
@@ -280,6 +281,7 @@ class ReactionDataset(Dataset):
             atom_hybrid_2, total_2 = hybridization_to_spdf(hybrid_2)
 
             atom_hybrid = atom_hybrid_1 + atom_hybrid_2
+            hybrid_change = add_vectors (atom_hybrid_1, atom_hybrid_2)
 
             # Tích hợp số lượng tử
             element = graph.nodes(data=True)[i]['element']
@@ -344,7 +346,7 @@ class ReactionDataset(Dataset):
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
 
-            atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change]  
+            atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_1 + hybrid_change + [neighbor_count_1] + [neighbor_change]  
             atom_fea_graph.append(atom_fea)
 
         
