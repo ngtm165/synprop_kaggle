@@ -258,7 +258,8 @@ class ReactionDataset(Dataset):
         max_neighbors = 6  # Tìm số neighbors lớn nhất. viết kèm 3 dòng dưới
         
         atom_fea_graph = []
-        
+        atom_hybrid_change = []
+
         for i in lst_nodes:
             
             atom_data = graph.nodes(data=True)[i] #ver 7_mới
@@ -267,6 +268,7 @@ class ReactionDataset(Dataset):
             charge_1 = atom_data['typesGH'][0][3] 
             charge_2 = atom_data['typesGH'][1][3]
             charge_atom = [charge_1] + [charge_2] #ver_3
+            charge_change = charge_1 - charge_2
         
 
             #hybridization
@@ -303,7 +305,7 @@ class ReactionDataset(Dataset):
             # Mã hóa one-hot cho các thuộc tính bổ sung
             hcount_1 = atom_data['typesGH'][0][2]
             hcount_2 = atom_data['typesGH'][1][2]
-            hcount_change = hcount_2 - hcount_1
+            hcount_change = hcount_1 - hcount_2
         
             # # Featurize số lượng nguyên tố neighbors
 
@@ -312,7 +314,7 @@ class ReactionDataset(Dataset):
 
             neighbor_count_1 = len(neighbor_1)
             neighbor_count_2 = len(neighbor_2)
-            neighbor_change = neighbor_count_2 - neighbor_count_1
+            neighbor_change = neighbor_count_1 - neighbor_count_2
 
             neighbor_elements_1 = neighbors_to_quantum_numbers(neighbor_1)
             neighbor_elements_2 = neighbors_to_quantum_numbers(neighbor_2)
@@ -337,8 +339,9 @@ class ReactionDataset(Dataset):
             atom_hybrid_p_1 = atom_hybrid_1 + [sigma_1] + [lone_1]
             atom_hybrid_p_2 = atom_hybrid_2 + [sigma_2] + [lone_2]
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
+            atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
 
-            atom_fea = quantum_features + e_max + [charge_1] + [hcount_1 + h_val_1] + atom_hybrid_p_1 + [neighbor_count_1] + [charge_2] + [hcount_2 + h_val_2] + atom_hybrid_p_2 + [neighbor_count_2] 
+            atom_fea = quantum_features + e_max + [charge_change] + [hcount_change] + atom_hybrid_change + [neighbor_change]  
             atom_fea_graph.append(atom_fea)
 
         
