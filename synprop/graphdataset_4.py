@@ -208,7 +208,7 @@ def hybridization_to_spdf(hybridization):
             else:
                 f_num = 1
 
-    # total = s + p_num + d_num + f_num
+    total = s + p_num + d_num + f_num
     
     # return [s, p_num, d_num, f_num], total
     
