@@ -345,7 +345,8 @@ class ReactionDataset(Dataset):
             atom_hybrid_p_2 = atom_hybrid_2 + [sigma_2] + [lone_2]
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
-
+            print(atom_hybrid_1)
+            
             atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_1 + hybrid_change + [neighbor_count_1] + [neighbor_change]  
             atom_fea_graph.append(atom_fea)
 
