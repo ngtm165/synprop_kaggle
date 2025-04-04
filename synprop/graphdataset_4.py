@@ -210,12 +210,12 @@ def hybridization_to_spdf(hybridization):
 
     total = s + p_num + d_num + f_num
     
-    # return [s, p_num, d_num, f_num], total
+    return [s, p_num, d_num, f_num], total
     
-    if total == 0:
-      return [0,0,0,0]
+    # if total == 0:
+    #   return [0,0,0,0]
 
-    return [s / total, p_num / total, d_num / total, f_num / total], total
+    # return [s / total, p_num / total, d_num / total, f_num / total], total
 
 def lone_pairs (total, sigma):
     lone = total - sigma 
