@@ -208,14 +208,14 @@ def hybridization_to_spdf(hybridization):
             else:
                 f_num = 1
 
-    # return [s, p_num, d_num, f_num]
-    
     total = s + p_num + d_num + f_num
+    
+    return [s, p_num, d_num, f_num], total
+    
+    # if total == 0:
+    #   return [0,0,0,0]
 
-    if total == 0:
-      return [0,0,0,0]
-
-    return [s / total, p_num / total, d_num / total, f_num / total], total
+    # return [s / total, p_num / total, d_num / total, f_num / total], total
 
 def lone_pairs (total, sigma):
     lone = total - sigma 
@@ -239,7 +239,7 @@ def calculate_standard_order(graph, standard_order):
     return sum(standard_orders)
 
 
-class ReactionDataset(Dataset): ##ver directed bond
+class ReactionDataset(Dataset):
     def __init__(self, data_path, graph_path, target):
         super(Dataset, self).__init__()
         self.graph, self.labels = read_data(data_path, graph_path, target)
@@ -259,6 +259,8 @@ class ReactionDataset(Dataset): ##ver directed bond
         
         atom_fea_graph = []
         atom_hybrid_change = []
+        hcount_change = []
+        hybrid_change = []
 
         for i in lst_nodes:
             
@@ -268,6 +270,7 @@ class ReactionDataset(Dataset): ##ver directed bond
             charge_1 = atom_data['typesGH'][0][3] 
             charge_2 = atom_data['typesGH'][1][3]
             charge_atom = [charge_1] + [charge_2] #ver_3
+            charge_change = charge_1 - charge_2
         
 
             #hybridization
@@ -278,6 +281,7 @@ class ReactionDataset(Dataset): ##ver directed bond
             atom_hybrid_2, total_2 = hybridization_to_spdf(hybrid_2)
 
             atom_hybrid = atom_hybrid_1 + atom_hybrid_2
+            hybrid_change = add_vectors (atom_hybrid_1, atom_hybrid_2)
 
             # Tích hợp số lượng tử
             element = graph.nodes(data=True)[i]['element']
@@ -304,7 +308,6 @@ class ReactionDataset(Dataset): ##ver directed bond
             # Mã hóa one-hot cho các thuộc tính bổ sung
             hcount_1 = atom_data['typesGH'][0][2]
             hcount_2 = atom_data['typesGH'][1][2]
-            hcount_change = hcount_2 - hcount_1
         
             # # Featurize số lượng nguyên tố neighbors
 
@@ -313,7 +316,7 @@ class ReactionDataset(Dataset): ##ver directed bond
 
             neighbor_count_1 = len(neighbor_1)
             neighbor_count_2 = len(neighbor_2)
-            neighbor_change = neighbor_count_2 - neighbor_count_1
+            neighbor_change = neighbor_count_1 - neighbor_count_2
 
             neighbor_elements_1 = neighbors_to_quantum_numbers(neighbor_1)
             neighbor_elements_2 = neighbors_to_quantum_numbers(neighbor_2)
@@ -321,7 +324,11 @@ class ReactionDataset(Dataset): ##ver directed bond
             #Kiểm tra thuyết
             h_val_1 = neighbor_elements_1.count(1)
             h_val_2 = neighbor_elements_2.count(1)
+            h_1 = [hcount_1 + h_val_1] 
+            h_2 = [hcount_2 + h_val_2] 
             hcount = [hcount_1 + h_val_1] + [hcount_2 + h_val_2] 
+
+            hcount_change = add_vectors (h_1, h_2)
 
             if h_val_1 == 0:
                 sigma_1 = hcount_1 + h_val_1 + neighbor_count_1
@@ -334,14 +341,12 @@ class ReactionDataset(Dataset): ##ver directed bond
             lone_1 = lone_pairs (total_1, sigma_1)
             lone_2 = lone_pairs (total_2, sigma_2)
 
-            # print(f'total_1: {total_1}, total_2: {total_2}')
-            # print(lone_1, lone_2)
             atom_hybrid_p_1 = atom_hybrid_1 + [sigma_1] + [lone_1]
             atom_hybrid_p_2 = atom_hybrid_2 + [sigma_2] + [lone_2]
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
-
-            atom_fea = quantum_features + e_max + charge_atom + hcount + atom_hybrid_p + [neighbor_count_1] + [neighbor_count_2] 
+            
+            atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change]  
             atom_fea_graph.append(atom_fea)
 
         
@@ -364,18 +369,6 @@ class ReactionDataset(Dataset): ##ver directed bond
             con_0, con_1 = list(graph.edges(data=True))[idx][2]['conjugated']
             bond_con_0 = [1] if con_0 == True else [0]
             bond_con_1 = [1] if con_1 == True else [0]
-
-            # Kiểm tra trạng thái
-            if isinstance(con_0, bool) and (con_0 == True or con_0 == False):
-                bond_exist_0 = [1]
-            else:
-                bond_exist_0 = [0]
-
-            if isinstance(con_1, bool) and (con_1 == True or con_1 == False):
-                bond_exist_1 = [1]
-            else:
-                bond_exist_1 = [0]
-
 
             if order_0 == 1:
                 edge_fea1 = [1,0] + bond_con_0
@@ -400,6 +393,7 @@ class ReactionDataset(Dataset): ##ver directed bond
                 edge_fea2 = [0,0,0]
             
             changes = add_vectors (edge_fea1, edge_fea2) #signma changes, pi changes, conjugated changes
+            # print (changes)
 
             if standard_order == 0 and order_0 == order_1: #unchaged
                 edge_fea3 = edge_fea1 + changes[:2]
@@ -427,8 +421,9 @@ class ReactionDataset(Dataset): ##ver directed bond
             else:
                 edge_aromatic = [0]
             
-            # print(edge_aromatic)
-            edge_fea = edge_fea1 + edge_fea2 + edge_fea3 + edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
+            # print(edge_fea3)
+            edge_fea = edge_fea1 + edge_fea2 #+ edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
+            
             # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
 
             # Lấy đặc trưng của hai nguyên tử tham gia liên kết
