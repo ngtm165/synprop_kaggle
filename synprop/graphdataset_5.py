@@ -210,12 +210,12 @@ def hybridization_to_spdf(hybridization):
 
     total = s + p_num + d_num + f_num
     
-    # return [s, p_num, d_num, f_num], total
+    return [s, p_num, d_num, f_num], total
     
-    if total == 0:
-      return [0,0,0,0]
+    # if total == 0:
+    #   return [0,0,0,0]
 
-    return [s / total, p_num / total, d_num / total, f_num / total], total
+    # return [s / total, p_num / total, d_num / total, f_num / total], total
 
 def lone_pairs (total, sigma):
     lone = total - sigma 
@@ -346,7 +346,7 @@ class ReactionDataset(Dataset):
             atom_hybrid_p = atom_hybrid_p_1 + atom_hybrid_p_2
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
             
-            atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_1 + hybrid_change + [neighbor_count_1] + [neighbor_change]  
+            atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change]  
             atom_fea_graph.append(atom_fea)
 
         
