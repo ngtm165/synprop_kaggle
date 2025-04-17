@@ -27,7 +27,7 @@ if __name__ == "__main__":
     # arg_parser.add_argument("--reaction_mode_str", type=str, default="reac_diff") #mới cho ver4   
     arg_parser.add_argument("--graph_path", type=str, default='./Data/regression/cycloaddition/its_new/cycloaddition.pkl.gz') #binh thuong bo cho nay
     arg_parser.add_argument("--model_name", type=str, default="model.pt")
-    arg_parser.add_argument("--y_column", type=str, default="G_r")
+    arg_parser.add_argument("--y_column", type=str, default="G_act")
     arg_parser.add_argument("--seed", type=int, default=27407)
     args = arg_parser.parse_args()
 
