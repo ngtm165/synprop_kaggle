@@ -25,7 +25,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--data_path", type=str, default='./Data/regression/RGD1CHNO/RGD1CHNO.csv')
     # arg_parser.add_argument("--column_rxn", type=str, default="AAM") #ver3,4,5
     # arg_parser.add_argument("--reaction_mode_str", type=str, default="reac_diff") #mới cho ver4   
-    arg_parser.add_argument("--graph_path", type=str, default='./Data/regression/RGD1CHNO/its_new/RGD1CHNO.pkl.gz') #binh thuong bo cho nay
+    arg_parser.add_argument("--graph_path", type=str, default='./Data/regression/RGD1CHNO/its_new/RGD1CHNO_smiles.pkl.gz') #binh thuong bo cho nay
     arg_parser.add_argument("--model_name", type=str, default="model.pt")
     arg_parser.add_argument("--y_column", type=str, default="DH")
     arg_parser.add_argument("--seed", type=int, default=27407)
