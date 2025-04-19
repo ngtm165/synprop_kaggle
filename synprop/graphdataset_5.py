@@ -434,16 +434,16 @@ class ReactionDataset(Dataset):
             directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
             edge_feat_graph.append(directed_feature_uv)
 
-            # # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
-            # directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            # edge_feat_graph.append(directed_feature_vu)
+            # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
+            directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
+            edge_feat_graph.append(directed_feature_vu)
 
 
         edge_index=torch.tensor([row,col])
         edge_attr=torch.tensor(np.array(edge_feat_graph),dtype=torch.float)
         node_attr=torch.tensor(np.array(atom_fea_graph),dtype=torch.float)
         y=torch.tensor(label,dtype=torch.float)
-        data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr) ##thử bỏ ',edge_attr=edge_attr'
+        data= Data(y=y,edge_index=edge_index,edge_attr=edge_attr) ##thử bỏ ',edge_attr=edge_attr'
 
         return data
 
