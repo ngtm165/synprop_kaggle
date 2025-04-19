@@ -19,7 +19,7 @@ from synprop.gine import GNN
 class model(nn.Module):
     def __init__(
         self,
-        # node_feat,
+        node_feat,
         edge_feat,
         out_dim=1,
         num_layer=3, #default = 3
@@ -31,7 +31,7 @@ class model(nn.Module):
     ):
         super(model, self).__init__()
         emb_dim=1024
-        self.gnn = GNN(edge_feat)  ##bỏ thử node_feat
+        self.gnn = GNN(node_feat,edge_feat)  
 
 
         self.predict = nn.Sequential(

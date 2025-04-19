@@ -443,7 +443,7 @@ class ReactionDataset(Dataset):
         edge_attr=torch.tensor(np.array(edge_feat_graph),dtype=torch.float)
         node_attr=torch.tensor(np.array(atom_fea_graph),dtype=torch.float)
         y=torch.tensor(label,dtype=torch.float)
-        data= Data(y=y,edge_index=edge_index,edge_attr=edge_attr) ##thử bỏ ',edge_attr=edge_attr'
+        data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr) ##thử bỏ ',edge_attr=edge_attr'
 
         return data
 
