@@ -98,7 +98,6 @@ class GNN(nn.Module):
         super(GNN, self).__init__()
 
         self.depth = depth
-        self.readout_option = readout_option
 
         # Project đặc trưng nút đầu vào -> kích thước ẩn
         self.project_node_feats = nn.Sequential(
@@ -144,7 +143,9 @@ class GNN(nn.Module):
             nn.Linear(node_hid_feats, readout_feats), nn.PReLU()
         )
         self.dropout = nn.Dropout(dr)
-        
+        self.readout_option = readout_option # Lưu lại tùy chọn readout
+        self.node_hid_feats = node_hid_feats # Lưu lại kích thước ẩn nút
+        self.readout_feats = readout_feats   # Lưu lại kích thước readout
 
     def forward(self, data):
         node_feats_orig = data.x
@@ -178,54 +179,3 @@ class GNN(nn.Module):
             readout = self.sparsify(readout)
 
         return readout
-
-def main():
-    
-    # --- Ví dụ tạo dữ liệu giả lập ---
-    num_nodes = 10
-    num_edges = 20
-    node_in_feats = 30 # Số chiều đặc trưng nút ban đầu
-    edge_in_feats = 10 # Số chiều đặc trưng cạnh ban đầu
-
-    # Tạo đặc trưng nút ngẫu nhiên
-    x = torch.randn(num_nodes, node_in_feats)
-    
-    # Tạo edge_index ngẫu nhiên (đảm bảo không có self-loop cho đơn giản)
-    row = torch.randint(0, num_nodes, (num_edges,))
-    col = torch.randint(0, num_nodes, (num_edges,))
-    # Loại bỏ self-loops
-    mask = row != col
-    row, col = row[mask], col[mask]
-    # Thêm cạnh theo 2 chiều
-    edge_index = torch.stack([torch.cat([row, col]), torch.cat([col, row])], dim=0)
-    
-    # Tạo đặc trưng cạnh ngẫu nhiên (số lượng phải khớp với edge_index)
-    num_actual_edges = edge_index.size(1)
-    edge_attr = torch.randn(num_actual_edges, edge_in_feats)
-
-    # Tạo batch vector (cho ví dụ 1 đồ thị)
-    batch = torch.zeros(num_nodes, dtype=torch.long)
-
-    # Đóng gói thành đối tượng Data
-    from torch_geometric.data import Data
-    data = Data(x=x, edge_index=edge_index, edge_attr=edge_attr, batch=batch)
-    # --- Kết thúc tạo dữ liệu giả lập ---
-
-
-    # Khởi tạo mô hình GNN đã tinh chỉnh
-    model = GNN(
-        node_in_feats=node_in_feats, 
-        edge_in_feats=edge_in_feats,
-        node_hid_feats=64, # Giảm kích thước cho ví dụ
-        edge_hid_feats=64,  # Đặt kích thước ẩn cạnh
-        depth=3,
-        readout_feats=128
-    )
-    print(model)
-
-    # Chạy forward pass
-    output = model(data)
-    print("Output shape:", output.shape) # Shape sẽ là [num_graphs, readout_feats]
-
-if __name__=='__main__':
-    main()
