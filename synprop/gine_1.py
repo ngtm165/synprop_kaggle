@@ -78,8 +78,8 @@ class DMPNNInspiredGINEConv(MessagePassing):
         # Nếu message_nn đã có ReLU rồi thì chỉ cần:
         return self.message_nn(input_message) 
 
-    # def __repr__(self) -> str: ##thử bỏ
-    #     return f'{self.__class__.__name__}(nn={self.nn}, message_nn={self.message_nn})'
+    def __repr__(self) -> str: ##thử bỏ
+        return f'{self.__class__.__name__}(nn={self.nn}, message_nn={self.message_nn})'
 
 # --- Tinh chỉnh lớp GNN của bạn ---
 class GNN(nn.Module):
