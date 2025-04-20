@@ -78,7 +78,7 @@ class DMPNNInspiredGINEConv(MessagePassing):
         # Nếu message_nn đã có ReLU rồi thì chỉ cần:
         return self.message_nn(input_message) 
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str: ##thử bỏ
         return f'{self.__class__.__name__}(nn={self.nn}, message_nn={self.message_nn})'
 
 # --- Tinh chỉnh lớp GNN của bạn ---
@@ -115,9 +115,9 @@ class GNN(nn.Module):
         for _ in range(self.depth):
             # MLP h_theta cuối cùng (nhận input là node_hid_feats)
             mlp_h_theta = nn.Sequential(
-                nn.Linear(node_hid_feats, node_hid_feats), # Có thể tăng chiều ở giữa, THỬ BỎ *2 CHO NODE_HID_FEATS SAU
+                nn.Linear(node_hid_feats, node_hid_feats*2), # Có thể tăng chiều ở giữa, THỬ BỎ *2 CHO NODE_HID_FEATS SAU
                 nn.ReLU(),
-                nn.Linear(node_hid_feats, node_hid_feats) #THỬ BỎ *2 CHO NODE_HID_FEATS TRƯỚC
+                nn.Linear(node_hid_feats*2, node_hid_feats) #THỬ BỎ *2 CHO NODE_HID_FEATS TRƯỚC
             )
             
             # MLP W_msg (message_nn) nhận input là cat(x_j, edge_attr) 
