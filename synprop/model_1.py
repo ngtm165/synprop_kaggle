@@ -32,8 +32,17 @@ class model(nn.Module):
         train_eps: bool = False # Thêm tùy chọn học epsilon
     ):
         super(model, self).__init__()
-        self.gnn = GNN(node_feat,edge_feat)  
-
+        self.gnn = GNN(
+            node_in_feats=node_feat,       
+            edge_in_feats=edge_feat,       
+            depth=num_layer,             
+            node_hid_feats=node_hid_feats, 
+            edge_hid_feats=edge_hid_feats, 
+            readout_feats=readout_feats,   
+            dr=drop_ratio,            
+            readout_option=readout_option, 
+            train_eps=train_eps          
+        )
 
         # Xác định kích thước đầu vào cho lớp predict dựa trên output của GNN
         # Truy cập các thuộc tính đã lưu trong GNN instance
