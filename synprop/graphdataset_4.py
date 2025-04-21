@@ -352,10 +352,13 @@ class ReactionDataset(Dataset):
         
         #bond_feature
         row, col, edge_feat_graph=[], [], []
-        for idx, bond in enumerate(lst_edges_update):
-            row+=[bond[0],bond[1]]
-            col+=[bond[1],bond[0]]
-            
+        for idx, bond in enumerate(lst_edges_update): # bond là cặp (chỉ số nút u, chỉ số nút v)
+            u = bond[0] # Chỉ số nút nguồn cho hướng u -> v
+            v = bond[1] # Chỉ số nút nguồn cho hướng v -> u
+
+            row += [u, v]
+            col += [v, u]
+
             # # Thêm các đặc trưng cạnh mới
             order_0, order_1 = list(graph.edges(data=True))[idx][2]['order']
             standard_order = list(graph.edges(data=True))[idx][2]['standard_order']

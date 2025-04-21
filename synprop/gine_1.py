@@ -62,25 +62,25 @@ class DMPNNInspiredGINEConv(MessagePassing):
 
         return out
 
-    # def message(self, x_j: torch.Tensor, edge_attr: torch.Tensor) -> torch.Tensor:
-    #     """
-    #     Tạo thông điệp m_{j->i} = ReLU(Linear(cat(x_j, edge_attr)))
-    #     x_j shape: [E, node_hid_feats] (đặc trưng nút nguồn j cho mỗi cạnh)
-    #     edge_attr shape: [E, node_hid_feats] (đặc trưng cạnh tương ứng)
-    #     """
-    #     # Ghép nối đặc trưng nút nguồn và đặc trưng cạnh
-    #     # Kích thước đầu vào cho message_nn sẽ là node_hid_feats + node_hid_feats
-    #     input_message = torch.cat([x_j, edge_attr], dim=-1) 
+    def message(self, x_j: torch.Tensor, edge_attr: torch.Tensor) -> torch.Tensor:
+        """
+        Tạo thông điệp m_{j->i} = ReLU(Linear(cat(x_j, edge_attr)))
+        x_j shape: [E, node_hid_feats] (đặc trưng nút nguồn j cho mỗi cạnh)
+        edge_attr shape: [E, node_hid_feats] (đặc trưng cạnh tương ứng)
+        """
+        # Ghép nối đặc trưng nút nguồn và đặc trưng cạnh
+        # Kích thước đầu vào cho message_nn sẽ là node_hid_feats + node_hid_feats
+        input_message = torch.cat([x_j, edge_attr], dim=-1) 
         
-    #     # Đưa qua mạng nơ-ron tạo message và áp dụng ReLU
-    #     # Giả sử message_nn đã bao gồm cả ReLU hoặc bạn có thể thêm ở đây
-    #     # Ví dụ: return F.relu(self.message_nn(input_message)) 
-    #     # Nếu message_nn đã có ReLU rồi thì chỉ cần:
-    #     return self.message_nn(input_message) 
+        # Đưa qua mạng nơ-ron tạo message và áp dụng ReLU
+        # Giả sử message_nn đã bao gồm cả ReLU hoặc bạn có thể thêm ở đây
+        # Ví dụ: return F.relu(self.message_nn(input_message)) 
+        # Nếu message_nn đã có ReLU rồi thì chỉ cần:
+        return self.message_nn(input_message) 
     
-    def message(self, edge_attr: torch.Tensor) -> torch.Tensor: # Không cần x_j ở đây nữa
-    # edge_attr bây giờ đã là cat(nút_nguồn_ban_đầu, cạnh_gốc)
-        return self.message_nn(edge_attr)
+    # def message(self, edge_attr: torch.Tensor) -> torch.Tensor: # Không cần x_j ở đây nữa
+    # # edge_attr bây giờ đã là cat(nút_nguồn_ban_đầu, cạnh_gốc)
+    #     return self.message_nn(edge_attr)
 
     def __repr__(self) -> str: ##thử bỏ
         return f'{self.__class__.__name__}(nn={self.nn}, message_nn={self.message_nn})'
