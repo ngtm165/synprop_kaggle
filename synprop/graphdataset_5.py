@@ -423,23 +423,20 @@ class ReactionDataset(Dataset):
             
             # print(edge_fea3)
             edge_fea = edge_fea1 + edge_fea2 #+ edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
-            
-            edge_feat_graph.append(edge_fea)
-            edge_feat_graph.append(edge_fea)
 
-            # # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
+            # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
 
-            # # Lấy đặc trưng của hai nguyên tử tham gia liên kết
-            # atom_feat_u = atom_fea_graph[u] 
-            # atom_feat_v = atom_fea_graph[v]
+            # Lấy đặc trưng của hai nguyên tử tham gia liên kết
+            atom_feat_u = atom_fea_graph[u] 
+            atom_feat_v = atom_fea_graph[v]
 
-            # # Tạo đặc trưng có hướng cho u -> v: Ghép đặc trưng nguyên tử nguồn u với đặc trưng liên kết
-            # directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            # edge_feat_graph.append(directed_feature_uv)
+            # Tạo đặc trưng có hướng cho u -> v: Ghép đặc trưng nguyên tử nguồn u với đặc trưng liên kết
+            directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
+            edge_feat_graph.append(directed_feature_uv)
 
-            # # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
-            # directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            # edge_feat_graph.append(directed_feature_vu)
+            # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
+            directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
+            edge_feat_graph.append(directed_feature_vu)
 
 
         edge_index=torch.tensor([row,col])
