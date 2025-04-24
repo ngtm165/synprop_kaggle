@@ -71,7 +71,7 @@ class DMPNNInspiredGINEConv(MessagePassing):
         # Ghép nối đặc trưng nút nguồn và đặc trưng cạnh
         # Kích thước đầu vào cho message_nn sẽ là node_hid_feats + node_hid_feats
         input_message = torch.cat([x_j, edge_attr], dim=-1) 
-        
+    
         # Đưa qua mạng nơ-ron tạo message và áp dụng ReLU
         # Giả sử message_nn đã bao gồm cả ReLU hoặc bạn có thể thêm ở đây
         # Ví dụ: return F.relu(self.message_nn(input_message)) 
