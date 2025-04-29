@@ -108,9 +108,9 @@ class GNN(nn.Module):
             # Đầu vào là cat(x, aggregated_messages) -> node_hid_feats * 2
             # Đầu ra là node_hid_feats
             update_mlp = nn.Sequential(
-                nn.Linear(node_hid_feats * 2, node_hid_feats * 2), # Input: node_hid_feats * 2
+                nn.Linear(node_hid_feats, node_hid_feats), # Input: node_hid_feats * 2
                 nn.ReLU(),
-                nn.Linear(node_hid_feats * 2, node_hid_feats)  # Output: node_hid_feats
+                nn.Linear(node_hid_feats, node_hid_feats)  # Output: node_hid_feats
             )
 
             # 3. Tạo lớp GNN lai MỚI
