@@ -44,8 +44,8 @@ class DMPNN_Hybrid_Conv(MessagePassing): # Đổi tên lớp ##BƯỚC 1,3 D-MPN
         
         # --- THAY ĐỔI BƯỚC 3: CẬP NHẬT NÚT ---
         # Kết hợp thông tin nút gốc và thông điệp tổng hợp bằng cat
-        # update_input = torch.cat([x, aggregated_messages], dim=-1) 
-        update_input = x + aggregated_messages
+        # update_input = torch.cat([x, aggregated_messages], dim=-1) #mang 2
+        update_input = x + aggregated_messages #mang 2.1
 
         # Kích thước đầu vào cho update_nn là node_hid_feats * 2
 
@@ -110,9 +110,9 @@ class GNN(nn.Module):
             # Đầu vào là cat(x, aggregated_messages) -> node_hid_feats * 2
             # Đầu ra là node_hid_feats
             update_mlp = nn.Sequential(
-                nn.Linear(node_hid_feats, node_hid_feats), # Input: node_hid_feats * 2
+                nn.Linear(node_hid_feats, node_hid_feats), # Input: node_hid_feats * 2 ## mang 2: (node_hid_feats * 2, node_hid_feats * 2), mang 2.1 bỏ hết *2
                 nn.ReLU(),
-                nn.Linear(node_hid_feats, node_hid_feats)  # Output: node_hid_feats
+                nn.Linear(node_hid_feats, node_hid_feats)  # Output: node_hid_feats  ##mang 2: (node_hid_feats * 2, node_hid_feats), mang 2.1 bỏ hết *2
             )
 
             # 3. Tạo lớp GNN lai MỚI

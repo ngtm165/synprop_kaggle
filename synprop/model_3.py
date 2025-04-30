@@ -14,8 +14,6 @@ sys.path.append(str(root_dir))
 os.chdir(str(root_dir))
 from synprop.gine_3 import GNN
 
-
-
 class model(nn.Module):
     def __init__(
         self,
