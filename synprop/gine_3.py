@@ -15,7 +15,7 @@ class DMPNN_Hybrid_Conv(MessagePassing):
     Update x'_i = update_nn(cat(x_i, sum(m_{j->i})))     (Bước 3 - D-MPNN style)
     """
     def __init__(self, message_nn: torch.nn.Module, update_nn: torch.nn.Module,
-                 aggr: str = 'add', **kwargs):
+                 aggr: str = 'sum', **kwargs):
         super().__init__(aggr=aggr, **kwargs)
         self.message_nn = message_nn
         self.update_nn = update_nn
@@ -93,7 +93,7 @@ class GNN(nn.Module):
             conv_layer = DMPNN_Hybrid_Conv(
                 message_nn=message_mlp,
                 update_nn=update_mlp,
-                aggr='add' # Bước 2 D-MPNN/GINE (sum aggregation)
+                aggr='sum' # Bước 2 D-MPNN/GINE (sum aggregation)
             )
             self.gnn_layers.append(conv_layer)
 
