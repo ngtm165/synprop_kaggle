@@ -5,7 +5,7 @@ from torch_geometric.nn.pool import global_add_pool
 from torch_geometric.nn import MessagePassing 
 
 # --- Định nghĩa lớp GNN lai mới: DMPNN Message & DMPNN Update ---
-class DMPNN_Hybrid_Conv(MessagePassing): # Đổi tên lớp
+class DMPNN_Hybrid_Conv(MessagePassing): # Đổi tên lớp ##BƯỚC 1,3 D-MPNN
     """
     Lớp GNN lấy cảm hứng từ D-MPNN cho cả bước tạo message và bước cập nhật nút.
     Message m_{j->i} = message_nn(cat(x_j, edge_attr))
@@ -13,7 +13,7 @@ class DMPNN_Hybrid_Conv(MessagePassing): # Đổi tên lớp
     """
     # Bỏ eps, train_eps. Đổi nn -> update_nn
     def __init__(self, message_nn: torch.nn.Module, update_nn: torch.nn.Module, 
-                 aggr: str = 'add', **kwargs): # Đổi aggr='sum' thành 'add' cho nhất quán PyG
+                 aggr: str = 'sum', **kwargs): # Đổi aggr='sum' thành 'add' cho nhất quán PyG
         super().__init__(aggr=aggr, **kwargs) 
         self.message_nn = message_nn 
         self.update_nn = update_nn # MLP cập nhật cuối cùng theo kiểu D-MPNN
