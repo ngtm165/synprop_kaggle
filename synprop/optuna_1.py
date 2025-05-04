@@ -99,7 +99,7 @@ def objective(trial, args):
     print(f"--- Trial {trial.number}: Loading data with batch_size={batch_size}... ---")
     try:
         # Sử dụng batch_size đã được sample
-        data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column, batch_size, 4, 0.1, 0.1, seed=seed)
+        data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column, batch_size, 4, 0.1, 0.1)
         train_loader, val_loader, _ = data_loader.get_data_loaders()
         node_attr = train_loader.dataset[0].x.shape[1]
         edge_attr = train_loader.dataset[0].edge_attr.shape[1]
@@ -229,7 +229,7 @@ def finetune_with_optuna_limited(args):
         print(f"Reloading data for final run with batch_size={best_params['batch_size']}...")
         try:
             final_batch_size = best_params['batch_size']
-            data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column, final_batch_size, 4, 0.1, 0.1, seed=seed)
+            data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column, final_batch_size, 4, 0.1, 0.1)
             train_loader, val_loader, test_loader = data_loader.get_data_loaders()
             node_attr = train_loader.dataset[0].x.shape[1]
             edge_attr = train_loader.dataset[0].edge_attr.shape[1]
