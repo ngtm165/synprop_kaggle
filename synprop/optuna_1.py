@@ -73,12 +73,12 @@ def objective(trial, args):
     temp_log_path = os.path.join(temp_log_dir, f"trial_{trial.number}_monitor.json")
 
     # Tạo một bản sao của args để sửa đổi đường dẫn log cho trial này
-    trial_args = args.copy()
+    # trial_args = args.copy()
     # Tạm thời ghi đè đường dẫn log để hàm train gốc ghi vào file tạm
     # Giả sử hàm train sử dụng args.monitor_folder + args.monitor_name
     # Chúng ta cần đảm bảo đường dẫn cuối cùng là temp_log_path
-    trial_args.monitor_folder = temp_log_dir + "/" # Đảm bảo có dấu /
-    trial_args.monitor_name = f"trial_{trial.number}_monitor.json"
+    args.monitor_folder = temp_log_dir + "/" # Đảm bảo có dấu /
+    args.monitor_name = f"trial_{trial.number}_monitor.json"
 
     # --- 2. Thiết lập môi trường ---
     device = (
@@ -180,7 +180,7 @@ def finetune_with_optuna_limited(args):
     # Bắt đầu quá trình tối ưu
     try:
         # Sử dụng args.copy() để đảm bảo mỗi trial nhận bản sao độc lập
-        study.optimize(lambda trial: objective(trial, copy.copy(args)), n_trials=args.n_trials)
+        study.optimize(lambda trial: objective(trial), n_trials=args.n_trials)
     except KeyboardInterrupt:
         print("Optimization stopped by user.")
     finally:
