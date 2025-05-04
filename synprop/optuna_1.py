@@ -65,7 +65,15 @@ def objective(trial, args):
     # Sử dụng đúng tên tham số 'drop_ratio' như trong model.__init__ gốc
     drop_ratio = trial.suggest_float("drop_ratio", 0.0, 0.5, step=0.05)
     batch_size = trial.suggest_int("batch_size", 16, 256, step=16) # Ví dụ tune batch_size
+    lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
+    depth = trial.suggest_int("depth", 2, 6) # Số lớp / bước lặp T
+    node_hid = trial.suggest_categorical("node_hid_feats", [128, 256, 300, 512])
+    # edge_hid = trial.suggest_categorical("edge_hid_feats", [128, 256, 300, 512])
+    weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-4, log=True)
+    readout_option = trial.suggest_categorical("readout_option", [True, False])
+    readout_f = trial.suggest_int("readout_feats", 512, 2048, step=512) if readout_option else node_hid # Kích thước readout phụ thuộc optio
 
+    
     # Tạo đường dẫn file log tạm thời cho trial này
     # Điều này QUAN TRỌNG để tránh xung đột khi đọc/ghi log giữa các trial
     temp_log_dir = os.path.join(args.monitor_folder, "optuna_temp_logs")
@@ -131,7 +139,7 @@ def objective(trial, args):
         # và ghi log vào đường dẫn trong trial_args (tức là temp_log_path)
         # Hàm train gốc không trả về gì (hoặc trả về model đã train)
         train(
-            trial_args, # Sử dụng args đã sửa đổi đường dẫn log
+            trial, # Sử dụng args đã sửa đổi đường dẫn log trial_args
             net,
             train_loader,
             val_loader,
