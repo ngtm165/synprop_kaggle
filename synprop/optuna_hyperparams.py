@@ -54,7 +54,7 @@ def finetune_with_optuna(args):
     print("--- model_path:", model_path)
 
     # --- Định nghĩa Hàm Objective cho Optuna ---
-    def objective(trial):
+    def objective(trial, args, node_attr, edge_attr, out_dim, train_loader, val_loader, device):
         # 1. Đề xuất siêu tham số
         lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
         depth = trial.suggest_int("depth", 2, 6) # Số lớp / bước lặp T
