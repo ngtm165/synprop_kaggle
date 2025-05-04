@@ -180,7 +180,7 @@ def finetune_with_optuna_limited(args):
     # Bắt đầu quá trình tối ưu
     try:
         # Sử dụng args.copy() để đảm bảo mỗi trial nhận bản sao độc lập
-        study.optimize(lambda trial: objective(trial, copy.copy(args), n_trials=args.n_trials)
+        study.optimize (lambda trial: objective(trial, copy.copy(args), n_trials=args.n_trials)
     except KeyboardInterrupt:
         print("Optimization stopped by user.")
     finally:
