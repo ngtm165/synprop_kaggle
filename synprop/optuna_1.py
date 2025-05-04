@@ -1,313 +1,371 @@
+# finetune_optuna_limited.py
+# Chỉ sửa đổi file này, giữ nguyên gine.py và model.py gốc
+
 import os
 import json
 import torch
-import torch.nn as nn
-from torch.optim import Adam
-import random
-
-import argparse
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import sys
-import optuna
+import optuna # Import Optuna
+import shutil # Để dọn dẹp file log tạm
 
+# --- Giả định cấu trúc thư mục gốc và import ---
 root_dir=Path(__file__).resolve().parents[1]
 sys.path.append(str(root_dir))
 os.chdir(str(root_dir))
-from synprop.model import model, train, inference # Ensure these are correctly importable
-from synprop.data_wrapper_7 import data_wrapper_7 # Ensure this is correctly importable
 
-# The finetune_with_optuna function is removed as its core logic (objective)
-# is moved into run_optimization, and it wasn't being called anyway.
+# Import các thành phần GỐC từ model.py và data_wrapper_7.py
+try:
+    from synprop.model import model, train, inference # Import bản gốc
+    from synprop.data_wrapper_7 import data_wrapper_7
+except ImportError:
+    raise ImportError("Could not import from synprop. Check paths and ensure original model.py exists.")
 
-# --- Hàm Main để chạy Optuna ---
-def run_optimization(args):
-    """Thiết lập và chạy Optuna study."""
+# --- Hàm đọc best_val_loss từ file log ---
+def get_best_val_loss_from_log(log_path):
+    """Đọc file log JSON và trả về val_loss nhỏ nhất."""
+    min_val_loss = float('inf')
+    try:
+        if not os.path.exists(log_path):
+            print(f"Warning: Log file not found at {log_path}")
+            return min_val_loss # Trả về vô cùng nếu file không tồn tại
 
-    # --- Setup Device và Seed ---
+        with open(log_path, 'r') as f:
+            for line in f:
+                try:
+                    log_entry = json.loads(line)
+                    # Kiểm tra xem có key 'val_loss' và giá trị hợp lệ không
+                    if 'val_loss' in log_entry and isinstance(log_entry['val_loss'], (int, float)):
+                        min_val_loss = min(min_val_loss, log_entry['val_loss'])
+                except json.JSONDecodeError:
+                    print(f"Warning: Skipping invalid JSON line in {log_path}: {line.strip()}")
+                    continue
+                except KeyError:
+                     # Bỏ qua nếu dòng không có key 'val_loss'
+                     continue
+
+        if min_val_loss == float('inf'):
+             print(f"Warning: No valid 'val_loss' found in {log_path}")
+
+        return min_val_loss
+
+    except Exception as e:
+        print(f"Error reading log file {log_path}: {e}")
+        return float('inf') # Trả về vô cùng nếu có lỗi đọc file
+
+# --- Hàm Objective cho Optuna ---
+def objective(trial, args):
+    """Hàm mục tiêu cho Optuna (phiên bản giới hạn)."""
+
+    # --- 1. Đề xuất siêu tham số có thể điều chỉnh ---
+    # Lưu ý: Chỉ có thể tune các tham số mà model() và data_wrapper_7() nhận vào.
+    predict_hidden_feats = trial.suggest_int("predict_hidden_feats", 128, 1024, step=64)
+    # Sử dụng đúng tên tham số 'drop_ratio' như trong model.__init__ gốc
+    drop_ratio = trial.suggest_float("drop_ratio", 0.0, 0.5, step=0.05)
+    batch_size = trial.suggest_int("batch_size", 32, 256, step=32) # Ví dụ tune batch_size
+
+    # Tạo đường dẫn file log tạm thời cho trial này
+    # Điều này QUAN TRỌNG để tránh xung đột khi đọc/ghi log giữa các trial
+    temp_log_dir = os.path.join(args.monitor_folder, "optuna_temp_logs")
+    os.makedirs(temp_log_dir, exist_ok=True)
+    temp_log_path = os.path.join(temp_log_dir, f"trial_{trial.number}_monitor.json")
+
+    # Tạo một bản sao của args để sửa đổi đường dẫn log cho trial này
+    trial_args = args.copy()
+    # Tạm thời ghi đè đường dẫn log để hàm train gốc ghi vào file tạm
+    # Giả sử hàm train sử dụng args.monitor_folder + args.monitor_name
+    # Chúng ta cần đảm bảo đường dẫn cuối cùng là temp_log_path
+    trial_args.monitor_folder = temp_log_dir + "/" # Đảm bảo có dấu /
+    trial_args.monitor_name = f"trial_{trial.number}_monitor.json"
+
+    # --- 2. Thiết lập môi trường ---
     device = (
-        torch.device("cuda:" + str(args.device))
+        torch.device(f"cuda:{args.device}")
         if torch.cuda.is_available()
         else torch.device("cpu")
     )
-    print("Device for Optuna:\t", device)
-    # Set seed (Quan trọng cho việc tái lập kết quả Optuna ở mức độ nào đó)
-    np.random.seed(args.seed)
-    random.seed(args.seed)
-    torch.manual_seed(args.seed)
+    print(f"--- Trial {trial.number}: Using device {device} ---")
+    seed = args.seed
     if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(args.seed)
-        # Thêm các cài đặt khác để tăng tính tái lập nếu cần
-        # torch.backends.cudnn.deterministic = True
-        # torch.backends.cudnn.benchmark = False
+        torch.cuda.manual_seed_all(seed)
+    else:
+        torch.manual_seed(seed)
+    np.random.seed(seed) # Đặt seed cho numpy nữa (quan trọng cho data split)
 
-    # --- Chuẩn bị Data Loaders ---
-    print("Loading data...")
+
+    # --- 3. Tải và chuẩn bị dữ liệu ---
+    print(f"--- Trial {trial.number}: Loading data with batch_size={batch_size}... ---")
     try:
-        # Sử dụng data_wrapper_7 đã import
-        data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column,
-                                     args.batch_size, num_workers=4, valid_size=0.1, test_size=0.1)
-        train_loader, val_loader, _ = data_loader.get_data_loaders() # Chỉ cần train/val
+        # Sử dụng batch_size đã được sample
+        data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column, batch_size, num_workers=4, val_size=0.1, test_size=0.1, seed=seed)
+        train_loader, val_loader, _ = data_loader.get_data_loaders()
+        node_attr = train_loader.dataset[0].x.shape[1]
+        edge_attr = train_loader.dataset[0].edge_attr.shape[1]
     except Exception as e:
-        print(f"Error initializing data loader: {e}")
-        sys.exit(1)
+        print(f"Error loading data in trial {trial.number}: {e}")
+        return float('inf')
 
-    # Lấy kích thước features
+    # --- 4. Khởi tạo mô hình GỐC với siêu tham số đã sample ---
     try:
-        # Using .num_node_features and .num_edge_features if available in data_wrapper_7's dataset object
-        # If not, fallback to inspecting the first item (less robust)
-        if hasattr(train_loader.dataset, 'num_node_features'):
-             node_attr = train_loader.dataset.num_node_features
-        else:
-             print("Warning: dataset has no 'num_node_features'. Inferring from first item.")
-             node_attr = train_loader.dataset[0].x.shape[1]
-
-        if hasattr(train_loader.dataset, 'num_edge_features'):
-             edge_attr = train_loader.dataset.num_edge_features
-        else:
-             print("Warning: dataset has no 'num_edge_features'. Inferring from first item.")
-             edge_attr = train_loader.dataset[0].edge_attr.shape[1]
-
-        # Xác định out_dim (ví dụ cho hồi quy)
-        out_dim = 1
-        print(f"Node features: {node_attr}, Edge features: {edge_attr}, Out dim: {out_dim}")
+        # Chỉ truyền các tham số mà model() gốc chấp nhận
+        net = model(
+            node_feat=node_attr,
+            edge_feat=edge_attr,
+            out_dim=1,
+            # Các tham số GNN sẽ lấy giá trị mặc định từ gine.py
+            # Chỉ đặt các tham số có thể tune:
+            predict_hidden_feats=predict_hidden_feats,
+            drop_ratio=drop_ratio,
+            # Các tham số khác không tune sẽ dùng giá trị mặc định của model() gốc
+        ).to(device)
     except Exception as e:
-        print(f"Lỗi khi lấy feature dimensions: {e}")
-        # Try accessing the first element as a fallback if properties don't exist
-        try:
-            print("Attempting fallback to inspect first data item...")
-            first_data = train_loader.dataset[0]
-            node_attr = first_data.x.shape[1]
-            edge_attr = first_data.edge_attr.shape[1]
-            out_dim = 1 # Assuming regression
-            print(f"(Fallback) Node features: {node_attr}, Edge features: {edge_attr}, Out dim: {out_dim}")
-        except Exception as fallback_e:
-            print(f"Fallback failed. Error getting feature dimensions: {fallback_e}")
-            sys.exit(1)
+         print(f"Error initializing model in trial {trial.number}: {e}")
+         return float('inf')
 
-
-    # --- Định nghĩa Hàm Objective cho Optuna (MOVED HERE) ---
-    def objective(trial, current_args, node_attr_obj, edge_attr_obj, out_dim_obj, train_loader_obj, val_loader_obj, device_obj):
-        # Using passed arguments with _obj suffix to avoid potential conflicts
-        # 1. Đề xuất siêu tham số
-        lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
-        depth = trial.suggest_int("depth", current_args.min_depth, current_args.max_depth) # Use args for range
-        node_hid = trial.suggest_categorical("node_hid_feats", current_args.node_hid_choices) # Use args for choices
-        # edge_hid = trial.suggest_categorical("edge_hid_feats", current_args.edge_hid_choices) # Uncomment if edge_hid is used in model
-        dr = trial.suggest_float("dr", current_args.min_dr, current_args.max_dr, step=0.1) # Use args for range
-        weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-4, log=True)
-        readout_option = trial.suggest_categorical("readout_option", [True, False])
-        predict_hidden = trial.suggest_int("predict_hidden_feats", 128, 1024, step=128)
-        # Kích thước readout phụ thuộc option
-        readout_f = trial.suggest_int("readout_feats", 512, 2048, step=512) if readout_option else node_hid
-
-        # 2. Xây dựng mô hình với tham số đề xuất
-        # Đảm bảo lớp 'model' đã được import hoặc định nghĩa đúng
-        current_model = model(
-            node_feat=node_attr_obj,
-            edge_feat=edge_attr_obj,
-            out_dim=out_dim_obj,
-            num_layer_dmpnn=depth, # Đảm bảo tên khớp định nghĩa model
-            node_hid_feats=node_hid,
-            # edge_hid_feats=edge_hid, # Uncomment if used
-            readout_feats=readout_f,
-            predict_hidden_feats=predict_hidden,
-            readout_option=readout_option,
-            drop_ratio=dr
-        ).to(device_obj)
-
-        # 3. Optimizer
-        optimizer = Adam(current_model.parameters(), lr=lr, weight_decay=weight_decay)
-        loss_fn = torch.nn.MSELoss()
-
-        # 4. Huấn luyện ngắn hạn cho trial
-        n_epochs_per_trial = getattr(current_args, 'n_epochs_per_trial', 15) # Get epochs per trial
-        val_loss_p = float('inf') # Initialize validation loss
-
-        for epoch in range(n_epochs_per_trial): # Dùng số epoch từ args
-            current_model.train()
-            epoch_train_loss = []
-            # Bỏ tqdm ở đây để output đỡ rối khi chạy song song nhiều trial
-            for batchdata in train_loader_obj:
-                batchdata = batchdata.to(device_obj)
-                try:
-                    optimizer.zero_grad()
-                    pred = current_model(batchdata)
-                    labels = batchdata.y.to(device_obj)
-                    loss = loss_fn(pred.view_as(labels), labels)
-                    if torch.isnan(loss): # Kiểm tra NaN loss
-                        print(f"Warning: NaN loss encountered in trial {trial.number}, epoch {epoch+1}. Pruning.")
-                        raise optuna.exceptions.TrialPruned() # Dừng trial nếu loss là NaN
-                    loss.backward()
-                    optimizer.step()
-                    epoch_train_loss.append(loss.item())
-                except RuntimeError as e: # Catch specific runtime errors like OOM
-                    if "out of memory" in str(e).lower():
-                        print(f"Warning: CUDA out of memory in trial {trial.number}, epoch {epoch+1}. Pruning.")
-                        torch.cuda.empty_cache() # Try to free memory
-                        raise optuna.exceptions.TrialPruned()
-                    else:
-                        print(f"Runtime error during training in trial {trial.number}, epoch {epoch+1}: {e}")
-                        raise optuna.exceptions.TrialPruned() # Prune for other runtime errors too
-                except Exception as train_e:
-                    print(f"Error during training in trial {trial.number}, epoch {epoch+1}: {train_e}")
-                    raise optuna.exceptions.TrialPruned() # Dừng trial nếu có lỗi khác
-
-            avg_epoch_loss = np.mean(epoch_train_loss) if epoch_train_loss else float('inf')
-            print(f"Trial {trial.number} Epoch {epoch+1}/{n_epochs_per_trial} Train Loss: {avg_epoch_loss:.4f}")
-
-            # --- Đánh giá trên validation và Pruning (Optional but recommended) ---
-            current_model.eval()
-            try:
-                # Gọi hàm inference đã import để lấy validation loss
-                # Pass current_args instead of the global args if inference needs specific args
-                # Note: Ensure the 'inference' function signature matches how it's called here.
-                # It might need `args`, `model`, `loader`, `device`, `loss_fn`.
-                val_rmse_p, val_mae_p, val_loss_p = inference(current_args, current_model, val_loader_obj, device_obj, loss_fn)
-
-                if np.isnan(val_loss_p): # Kiểm tra NaN loss
-                    print(f"Warning: NaN validation loss encountered in trial {trial.number}, epoch {epoch+1}. Pruning.")
-                    raise optuna.exceptions.TrialPruned()
-            except RuntimeError as e: # Catch specific runtime errors like OOM during inference
-                 if "out of memory" in str(e).lower():
-                     print(f"Warning: CUDA out of memory during validation in trial {trial.number}, epoch {epoch+1}. Pruning.")
-                     torch.cuda.empty_cache() # Try to free memory
-                     raise optuna.exceptions.TrialPruned()
-                 else:
-                     print(f"Runtime error during validation in trial {trial.number}, epoch {epoch+1}: {e}")
-                     raise optuna.exceptions.TrialPruned() # Prune for other runtime errors too
-            except Exception as eval_e:
-                 print(f"Error during validation in trial {trial.number}, epoch {epoch+1}: {eval_e}")
-                 raise optuna.exceptions.TrialPruned() # Dừng trial nếu có lỗi khác
-
-            trial.report(val_loss_p, epoch) # Báo cáo kết quả validation loss cho Optuna
-
-            # Kiểm tra xem có nên dừng sớm trial này không
-            if trial.should_prune():
-                print(f"Trial {trial.number} pruned at epoch {epoch+1}")
-                raise optuna.exceptions.TrialPruned()
-
-        # 5. Trả về metric cuối cùng của trial (sau khi hoàn thành các epoch hoặc không bị prune)
-        # Metric này đã được tính ở epoch cuối cùng trong vòng lặp trên
-        print(f"Trial {trial.number} finished. Final Val Loss reported: {val_loss_p:.4f}")
-        # Ensure val_loss_p has a valid value before returning
-        if np.isinf(val_loss_p) or np.isnan(val_loss_p):
-             print(f"Warning: Trial {trial.number} finished with invalid loss ({val_loss_p}). Returning large value.")
-             return float('inf') # Return a large value if something went wrong
-
-        return val_loss_p # Trả về validation loss cuối cùng
-
-
-    # --- Tạo và Chạy Optuna Study ---
-    study_name = args.study_name # Lấy tên study từ args
-    storage_name = f"sqlite:///{args.db_path}{study_name}.db" # Lưu trữ vào SQLite DB
-    print(f"Starting Optuna study: {study_name}")
-    print(f"Database storage: {storage_name}")
-    Path(args.db_path).mkdir(parents=True, exist_ok=True) # Tạo thư mục nếu chưa có
-
-    # Create study, load if exists, specify direction
-    study = optuna.create_study(
-        study_name=study_name,
-        storage=storage_name,
-        load_if_exists=True, # Tải lại study nếu tên đã tồn tại
-        direction="minimize", # Mục tiêu là giảm validation loss
-        pruner=optuna.pruners.MedianPruner() # Add a pruner
-    )
-
-    # Đóng gói các tham số cố định cho hàm objective bằng lambda
-    # Pass necessary variables from run_optimization's scope into the objective function
-    objective_func = lambda trial: objective(trial, args, node_attr, edge_attr, out_dim, train_loader, val_loader, device)
-
-    print(f"Running Optuna optimization for {args.n_trials} trials...")
+    # --- 5. Huấn luyện mô hình sử dụng hàm train GỐC ---
+    print(f"--- Trial {trial.number}: Starting training with params: {trial.params} ---")
     try:
-        study.optimize(objective_func, n_trials=args.n_trials, timeout=args.timeout) # Thêm timeout nếu muốn giới hạn thời gian tổng
+        # Gọi hàm train gốc. Nó sẽ tự tạo optimizer với lr/wd cố định
+        # và ghi log vào đường dẫn trong trial_args (tức là temp_log_path)
+        # Hàm train gốc không trả về gì (hoặc trả về model đã train)
+        train(
+            trial_args, # Sử dụng args đã sửa đổi đường dẫn log
+            net,
+            train_loader,
+            val_loader,
+            model_path="temp_model.pth", # Đường dẫn này không quan trọng lắm vì ta đọc log
+            device=device,
+            epochs=args.epochs
+            # Không thể truyền lr, weight_decay
+            # Không thể bật save_model=False
+            # Không thể dùng pruning của Optuna vì train gốc không hỗ trợ
+        )
+    except Exception as e:
+        print(f"Error during training in trial {trial.number}: {e}")
+        # Xóa file log tạm nếu có lỗi để tránh đọc nhầm
+        if os.path.exists(temp_log_path):
+            os.remove(temp_log_path)
+        return float('inf')
+
+    # --- 6. Đọc kết quả từ file log tạm ---
+    print(f"--- Trial {trial.number}: Reading results from log file: {temp_log_path} ---")
+    best_val_loss = get_best_val_loss_from_log(temp_log_path)
+
+    # --- 7. Dọn dẹp file log tạm (tùy chọn) ---
+    # try:
+    #     if os.path.exists(temp_log_path):
+    #         os.remove(temp_log_path)
+    # except OSError as e:
+    #     print(f"Warning: Could not remove temporary log file {temp_log_path}: {e}")
+
+    # --- 8. Trả về chỉ số cần tối ưu ---
+    print(f"--- Trial {trial.number}: Finished. Best Validation Loss from log: {best_val_loss:.4f} ---")
+    # Kiểm tra nếu không đọc được loss hợp lệ
+    if best_val_loss == float('inf'):
+         print(f"Warning: Trial {trial.number} did not produce a valid validation loss.")
+         # Optuna sẽ coi trial này là thất bại nếu trả về vô cùng
+
+    return best_val_loss
+
+
+# --- Hàm chính để chạy finetune với Optuna (phiên bản giới hạn) ---
+def finetune_with_optuna_limited(args):
+    """Hàm chính để thiết lập và chạy Optuna study (phiên bản giới hạn)."""
+
+    # Tạo study object, chỉ định hướng tối ưu (minimize loss)
+    study = optuna.create_study(direction="minimize")
+
+    # Bắt đầu quá trình tối ưu
+    try:
+        # Sử dụng args.copy() để đảm bảo mỗi trial nhận bản sao độc lập
+        study.optimize(lambda trial: objective(trial, args.copy()), n_trials=args.n_trials)
     except KeyboardInterrupt:
-         print("Optimization stopped by user.")
-    # Catch potential issues during optimization itself (less common than trial errors)
-    except Exception as opt_e:
-         print(f"An error occurred during the optimization process: {opt_e}")
+        print("Optimization stopped by user.")
+    finally:
+        # Dọn dẹp thư mục log tạm sau khi study kết thúc hoặc bị ngắt
+        temp_log_dir = os.path.join(args.monitor_folder, "optuna_temp_logs")
+        if os.path.exists(temp_log_dir):
+            print(f"Cleaning up temporary log directory: {temp_log_dir}")
+            shutil.rmtree(temp_log_dir, ignore_errors=True)
 
 
-    # --- In và Lưu kết quả tốt nhất ---
-    print("\n" + "="*30 + " Optuna Optimization Finished " + "="*30)
-    try:
-        print(f"Study '{study.study_name}' finished with {len(study.trials)} trials.")
+    # --- In kết quả ---
+    complete_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+    fail_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.FAIL]
 
-        # Check if any trials completed successfully before accessing best_trial
-        completed_trials = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
-        if not completed_trials:
-             print("No trials completed successfully. Cannot determine best parameters.")
-             # Optionally, print info about failed trials
-             failed_trials = [t for t in study.trials if t.state != optuna.trial.TrialState.COMPLETE]
-             print(f"Number of failed/pruned trials: {len(failed_trials)}")
-             # You could add more detailed logging about why trials failed here if needed
+    print("\n" + "="*20 + " Optuna Study Statistics " + "="*20)
+    print(f"  Number of finished trials: {len(study.trials)}")
+    print(f"  Number of complete trials: {len(complete_trials)}")
+    print(f"  Number of fail trials: {len(fail_trials)}")
+
+    if complete_trials and study.best_trial: # Kiểm tra xem có best_trial không
+        best_trial = study.best_trial
+        print("\n" + "="*20 + " Best Trial Summary " + "="*20)
+        print(f"  Value (Best Validation Loss from logs): {best_trial.value:.4f}")
+        print("  Best Parameters Found (Limited Scope): ")
+        for key, value in best_trial.params.items():
+            print(f"    {key}: {value}")
+
+        # --- Huấn luyện lại mô hình cuối cùng với tham số tốt nhất và đánh giá trên test set ---
+        print("\n" + "="*20 + " Training Final Model with Best Params " + "="*20)
+
+        # Lấy các tham số tốt nhất (chỉ những cái đã tune)
+        best_params = best_trial.params
+        device = (
+            torch.device(f"cuda:{args.device}")
+            if torch.cuda.is_available()
+            else torch.device("cpu")
+        )
+        seed = args.seed
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
         else:
-             best_trial = study.best_trial
-             best_params = best_trial.params
-             best_value = best_trial.value
-             print(f"Best validation loss found: {best_value:.4f} (Trial {best_trial.number})")
-             print("Best hyperparameters found:")
-             print(json.dumps(best_params, indent=4))
+             torch.manual_seed(seed)
+        np.random.seed(seed)
 
-             # Lưu best_params vào file json
-             best_params_path = os.path.join(args.output_dir, f"{study_name}_best_params.json")
-             Path(args.output_dir).mkdir(parents=True, exist_ok=True)
-             with open(best_params_path, "w") as f:
-                 json.dump(best_params, f, indent=4)
-             print(f"Best parameters saved to {best_params_path}")
+        # Tải lại dữ liệu (sử dụng batch_size tốt nhất)
+        print(f"Reloading data for final run with batch_size={best_params['batch_size']}...")
+        try:
+            final_batch_size = best_params['batch_size']
+            data_loader = data_wrapper_7(args.data_path, args.graph_path, args.y_column, final_batch_size, num_workers=4, val_size=0.1, test_size=0.1, seed=seed)
+            train_loader, val_loader, test_loader = data_loader.get_data_loaders()
+            node_attr = train_loader.dataset[0].x.shape[1]
+            edge_attr = train_loader.dataset[0].edge_attr.shape[1]
+        except Exception as e:
+            print(f"Error reloading data for final run: {e}")
+            return
 
-    # Catch the specific error when no successful trials are found
-    except ValueError as e:
-        if "contains no completed trials" in str(e):
-            print(f"Optuna study '{study.study_name}' finished, but no trials completed successfully.")
-        else:
-            print(f"An unexpected ValueError occurred retrieving results: {e}")
-    except Exception as e:
-         print(f"An unexpected error occurred retrieving results: {e}")
+        # Khởi tạo model gốc với tham số tốt nhất (chỉ những cái đã tune)
+        try:
+            final_net = model(
+                node_feat=node_attr,
+                edge_feat=edge_attr,
+                out_dim=1,
+                predict_hidden_feats=best_params["predict_hidden_feats"],
+                drop_ratio=best_params["drop_ratio"],
+            ).to(device)
+        except Exception as e:
+            print(f"Error initializing final model: {e}")
+            return
+
+        # Huấn luyện lần cuối bằng hàm train gốc
+        # Lần này sẽ ghi log và lưu model vào đường dẫn cuối cùng trong args
+        print("Starting final training...")
+        final_model_path = args.model_path + args.model_name # Đường dẫn lưu model cuối cùng
+        final_monitor_path = args.monitor_folder + args.monitor_name # Đường dẫn log cuối cùng
+
+        # Xóa file log cuối cùng cũ nếu tồn tại để bắt đầu log mới
+        if os.path.exists(final_monitor_path):
+            try:
+                os.remove(final_monitor_path)
+                print(f"Removed old final log file: {final_monitor_path}")
+            except OSError as e:
+                print(f"Warning: Could not remove old final log file {final_monitor_path}: {e}")
 
 
-# --- Parser cho Command Line Arguments ---
+        try:
+            # Gọi hàm train gốc, nó sẽ lưu model tốt nhất dựa trên val loss nội bộ của nó
+            train(
+                args, # Sử dụng args gốc với đường dẫn cuối cùng
+                final_net,
+                train_loader,
+                val_loader,
+                model_path=final_model_path, # Đường dẫn lưu model cuối cùng
+                device=device,
+                epochs=args.epochs # Số epochs cho final training
+            )
+        except Exception as e:
+             print(f"Error during final training: {e}")
+             return
+
+        # Đánh giá trên tập test với model tốt nhất vừa được lưu bởi hàm train gốc
+        print("\n" + "="*20 + " Evaluating Final Model on Test Set " + "="*20)
+        # Tải lại model tốt nhất đã được lưu bởi lần train cuối cùng
+        try:
+            # Cần khởi tạo lại model trước khi load state dict
+            eval_net = model(
+                node_feat=node_attr,
+                edge_feat=edge_attr,
+                out_dim=1,
+                predict_hidden_feats=best_params["predict_hidden_feats"],
+                drop_ratio=best_params["drop_ratio"],
+            ).to(device)
+            # Load state dict
+            checkpoint = torch.load(final_model_path, map_location=device)
+            eval_net.load_state_dict(checkpoint["model_state_dict"])
+        except FileNotFoundError:
+            print(f"Error: Could not load final model from {final_model_path}. Was it saved correctly by train()?")
+            return
+        except Exception as e:
+            print(f"Error loading final model state_dict: {e}")
+            return
+
+        try:
+            test_rmse, test_mae = inference(args, eval_net, test_loader, device, loss_fn=None, desc="Final Testing")
+            print("-- FINAL TEST RESULT --")
+            print(f"--- RMSE: {test_rmse:.3f}, MAE: {test_mae:.3f} ---")
+
+            # Ghi kết quả test vào file log cuối cùng
+            test_dict = {
+                "Name": "Test Evaluation with Best Limited Params",
+                "test_rmse": test_rmse if not np.isnan(test_rmse) else 'NaN',
+                "test_mae": test_mae if not np.isnan(test_mae) else 'NaN',
+                "best_limited_params": best_params
+            }
+            if args.monitor_folder and args.monitor_name:
+                with open(final_monitor_path, "a") as f:
+                    # Ghi thêm thông tin về trial tốt nhất vào đầu file nếu muốn
+                    f.write(json.dumps({"best_trial_info": study.best_trial.params, "best_value": study.best_trial.value}) + "\n")
+                    f.write(json.dumps(test_dict) + "\n")
+            else:
+                 print(f"Final test results: {test_dict}")
+
+        except Exception as e:
+            print(f"Error during final testing: {e}")
+
+    else:
+        print("\nNo complete trials found or study did not yield a best trial. Could not run final evaluation.")
+
+
+# --- Entry Point ---
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run Optuna Hyperparameter Optimization for GNN")
+    import argparse
 
-    # Basic data & model parameters
+    parser = argparse.ArgumentParser(description="Finetune GNN model with Optuna HPO (Limited Scope - Original model.py/gine.py)")
+    # --- Giữ nguyên các tham số dòng lệnh như cũ ---
+    
     parser.add_argument("--data_path", type=str, default='./Data/regression/lograte/lograte.csv')
     parser.add_argument("--graph_path", type=str, default='./Data/regression/lograte/its_new/lograte.pkl.gz')
     parser.add_argument("--y_column", type=str, default="lograte")
-    parser.add_argument("--batch_size", type=int, default=16)
-    parser.add_argument("--device", type=int, default=0)
-    parser.add_argument("--seed", type=int, default=27407)
+    parser.add_argument("--model_path", type=str, default="./Data/model/") # Sửa mô tả
+    parser.add_argument("--model_name", type=str, default="model.pt")
+    parser.add_argument("--monitor_folder", type=str, default="./Data/monitor/")
+    parser.add_argument("--monitor_name", type=str, default="monitor.txt")
+    # Bỏ batch_size khỏi args nếu muốn tune nó bằng Optuna
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
+    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for each Optuna trial AND final training")
+    parser.add_argument("--device", type=int, default=0, help="GPU device index to use")
+    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    # --- Thêm tham số cho Optuna ---
+    parser.add_argument("--n_trials", type=int, default=30, help="Number of Optuna trials to run") # Giảm số trial mặc định vì scope hẹp hơn
 
-    # Optuna parameters
-    parser.add_argument("--n_trials", type=int, default=50, help="Number of Optuna trials")
-    parser.add_argument("--n_epochs_per_trial", type=int, default=15, help="Number of epochs per Optuna trial")
-    parser.add_argument("--study_name", type=str, default="gnn_optimization", help="Name for the Optuna study")
-    parser.add_argument("--db_path", type=str, default="./optuna_db/", help="Directory to save Optuna study database")
-    parser.add_argument("--output_dir", type=str, default="./optuna_results/", help="Directory to save best parameters JSON")
-    parser.add_argument("--timeout", type=int, default=None, help="Optional timeout for Optuna study in seconds")
-
-    # Optuna search space parameters (passed via args)
-    parser.add_argument('--min_depth', type=int, default=2)
-    parser.add_argument('--max_depth', type=int, default=6)
-    parser.add_argument('--node_hid_choices', type=int, nargs='+', default=[128, 256, 300, 512])
-    # parser.add_argument('--edge_hid_choices', type=int, nargs='+', default=[128, 256, 300, 512]) # Uncomment if edge_hid is used
-    parser.add_argument('--min_dr', type=float, default=0.0)
-    parser.add_argument('--max_dr', type=float, default=0.5)
-
-    # Add any args needed by the 'inference' function if they are not already present
-    # Example: If inference needs a specific metric name
-    # parser.add_argument("--metric_name", type=str, default="RMSE", help="Metric for inference reporting")
-
+    # Parse args
     args = parser.parse_args()
 
-    # Ensure paths exist or handle errors
-    if not Path(args.data_path).is_file():
-        print(f"Error: Data file not found at {args.data_path}")
-        sys.exit(1)
-    if not Path(args.graph_path).is_file():
-        print(f"Error: Graph file not found at {args.graph_path}")
-        sys.exit(1)
+    # # # Lấy batch_size mặc định nếu không tune nó
+    # # if 'batch_size' not in args:
+    # #      args.batch_size = 128 # Đặt giá trị mặc định ở đây nếu không có trong parser
 
-    # Run the optimization
-    run_optimization(args)
+    # # Tạo thư mục nếu chưa tồn tại (sử dụng phần tiền tố của đường dẫn)
+    # model_dir = os.path.dirname(args.model_path + args.model_name)
+    # log_dir = os.path.dirname(args.monitor_folder + args.monitor_name)
+    # if model_dir and not os.path.exists(model_dir):
+    #     os.makedirs(model_dir)
+    # if log_dir and not os.path.exists(log_dir):
+    #     os.makedirs(log_dir)
+
+
+    # Chạy hàm tối ưu
+    finetune_with_optuna_limited(args)
