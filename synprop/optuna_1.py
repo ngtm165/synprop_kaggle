@@ -1,6 +1,6 @@
 # finetune_optuna_limited.py
 # Chỉ sửa đổi file này, giữ nguyên gine.py và model.py gốc
-
+import copy
 import os
 import json
 import torch
