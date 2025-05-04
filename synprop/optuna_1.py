@@ -139,7 +139,7 @@ def objective(trial, args):
         # và ghi log vào đường dẫn trong trial_args (tức là temp_log_path)
         # Hàm train gốc không trả về gì (hoặc trả về model đã train)
         train(
-            trial, # Sử dụng args đã sửa đổi đường dẫn log trial_args
+            args, # Sử dụng args đã sửa đổi đường dẫn log trial_args, trial
             net,
             train_loader,
             val_loader,
