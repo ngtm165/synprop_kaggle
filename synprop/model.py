@@ -28,7 +28,7 @@ class model(nn.Module):
         predict_hidden_feats=512,
         readout_option=False,
         drop_ratio=0.1, #default = 0.1
-        # lr=lr, ##mới thêm
+        lr=lr, ##mới thêm
         # depth=depth, ##mới thêm
     ):
         super(model, self).__init__()
@@ -69,8 +69,8 @@ def train(
     n_epochs = epochs
 
     loss_fn = torch.nn.MSELoss()
-    optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5) ##default: lr=5e-4, weight_decay=1e-5
-    # optimizer = Adam(net.parameters(), lr=lr, weight_decay=weight_decay) ##default: lr=5e-4, weight_decay=1e-5
+    # optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5) ##default: lr=5e-4, weight_decay=1e-5
+    optimizer = Adam(net.parameters(), lr=lr, weight_decay=weight_decay) ##default: lr=5e-4, weight_decay=1e-5
 
     for epoch in range(n_epochs):
         # training
