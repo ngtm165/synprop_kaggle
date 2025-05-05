@@ -13,7 +13,7 @@ class GNN(nn.Module):
         node_hid_feats=256, #default = 300; opt = 1700
         readout_feats=1024, #default = 1024
         dr=0.05, #default = 0.1; opt = 0.2
-        readout_option=False, #default = True
+        readout_option=True, #default = True
         # lr=lr, ##mới thêm
     ):
         super(GNN, self).__init__()
