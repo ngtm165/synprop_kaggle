@@ -374,7 +374,7 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for each Optuna trial AND final training")
     parser.add_argument("--device", type=int, default=0, help="GPU device index to use")
-    parser.add_argument("--seed", type=int, default=42, help="Random seed")
+    parser.add_argument("--seed", type=int, default=27407, help="Random seed")
     # --- Thêm tham số cho Optuna ---
     parser.add_argument("--n_trials", type=int, default=30, help="Number of Optuna trials to run") # Giảm số trial mặc định vì scope hẹp hơn
 
