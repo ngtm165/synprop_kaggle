@@ -14,6 +14,8 @@ class GNN(nn.Module):
         readout_feats=1024,
         dr=0.1, #default = 0.1; opt = 0.2
         readout_option=True,
+        lr=lr, ##mới thêm
+        depth=depth, ##mới thêm
     ):
         super(GNN, self).__init__()
 
