@@ -363,9 +363,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Finetune GNN model with Optuna HPO (Limited Scope - Original model.py/gine.py)")
     # --- Giữ nguyên các tham số dòng lệnh như cũ ---
     
-    parser.add_argument("--data_path", type=str, default='./Data/regression/lograte/lograte.csv')
-    parser.add_argument("--graph_path", type=str, default='./Data/regression/lograte/its_new/lograte.pkl.gz')
-    parser.add_argument("--y_column", type=str, default="lograte")
+    parser.add_argument("--data_path", type=str, default='./Data/regression/e2sn2/e2sn2.csv')
+    parser.add_argument("--graph_path", type=str, default='./Data/regression/e2sn2/its_new/e2sn2.pkl.gz')
+    parser.add_argument("--y_column", type=str, default="ea")
     parser.add_argument("--model_path", type=str, default="./Data/model/") # Sửa mô tả
     parser.add_argument("--model_name", type=str, default="model.pt")
     parser.add_argument("--monitor_folder", type=str, default="./Data/monitor/")
