@@ -68,7 +68,7 @@ def objective(trial, args):
     # edge_hid = trial.suggest_categorical("edge_hid_feats", [128, 256, 300, 512])
     weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-4, log=True)
     readout_option = trial.suggest_categorical("readout_option", [True, False])
-    readout_f = trial.suggest_int("readout_feats", 512, 2048, step=512) if readout_option else node_hid_feats # Kích thước readout phụ thuộc optio
+    readout_feats = trial.suggest_int("readout_feats", 512, 2048, step=512) if readout_option else node_hid_feats # Kích thước readout phụ thuộc optio
 
     
     # Tạo đường dẫn file log tạm thời cho trial này
@@ -127,7 +127,7 @@ def objective(trial, args):
             # edge_hid = edge_hid_feats,
             weight_decay=weight_decay,
             readout_option=readout_option,
-            readout_f=readout_feats,
+            readout_feats=readout_feats,
 
         ).to(device)
     except Exception as e:
@@ -261,7 +261,7 @@ def finetune_with_optuna_limited(args):
                 # edge_hid=best_params['edge_hid_feats'],
                 weight_decay=best_params['weight_decay'], ##decayo
                 readout_option=best_params['readout_option'],
-                readout_f=best_params['readout_feats'],
+                readout_feats=best_params['readout_feats'],
 
             ).to(device)
         except Exception as e:
@@ -315,7 +315,7 @@ def finetune_with_optuna_limited(args):
                 # edge_hid=best_params['edge_hid_feats'],
                 weight_decay=best_params['weight_decay'], ##decayo
                 readout_option=best_params['readout_option'],
-                readout_f=best_params['readout_feats'],
+                readout_feats=best_params['readout_feats'],
             ).to(device)
             # Load state dict
             checkpoint = torch.load(final_model_path, map_location=device)
