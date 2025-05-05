@@ -385,14 +385,5 @@ if __name__ == "__main__":
     # # if 'batch_size' not in args:
     # #      args.batch_size = 128 # Đặt giá trị mặc định ở đây nếu không có trong parser
 
-    # # Tạo thư mục nếu chưa tồn tại (sử dụng phần tiền tố của đường dẫn)
-    # model_dir = os.path.dirname(args.model_path + args.model_name)
-    # log_dir = os.path.dirname(args.monitor_folder + args.monitor_name)
-    # if model_dir and not os.path.exists(model_dir):
-    #     os.makedirs(model_dir)
-    # if log_dir and not os.path.exists(log_dir):
-    #     os.makedirs(log_dir)
-
-
     # Chạy hàm tối ưu
     finetune_with_optuna_limited(args)
