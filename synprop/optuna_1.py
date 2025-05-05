@@ -259,12 +259,12 @@ def finetune_with_optuna_limited(args):
                 predict_hidden_feats=best_params["predict_hidden_feats"],
                 drop_ratio=best_params["drop_ratio"],
                 lr=best_params['lr'], 
-                deptho=best_params['depth'],
-                node_hido=best_params['node_hid_feats'],
-                # edge_hido=best_params['edge_hid_feats'],
-                weight_decayo=best_params['weight_decay'],
-                readout_optiono=best_params['readout_option'],
-                readout_fo=best_params['readout_feats'],
+                depth=best_params['depth'],
+                node_hid=best_params['node_hid_feats'],
+                # edge_hid=best_params['edge_hid_feats'],
+                weight_decay=best_params['weight_decay'], ##decayo
+                readout_option=best_params['readout_option'],
+                readout_f=best_params['readout_feats'],
 
             ).to(device)
         except Exception as e:
@@ -313,12 +313,12 @@ def finetune_with_optuna_limited(args):
                 predict_hidden_feats=best_params["predict_hidden_feats"],
                 drop_ratio=best_params["drop_ratio"],
                 lr=best_params['lr'], 
-                deptho=best_params['depth'],
-                node_hido=best_params['node_hid_feats'],
-                # edge_hido=best_params['edge_hid_feats'],
-                weight_decayo=best_params['weight_decay'],
-                readout_optiono=best_params['readout_option'],
-                readout_fo=best_params['readout_feats'],
+                depth=best_params['depth'],
+                node_hid=best_params['node_hid_feats'],
+                # edge_hid=best_params['edge_hid_feats'],
+                weight_decay=best_params['weight_decay'], ##decayo
+                readout_option=best_params['readout_option'],
+                readout_f=best_params['readout_feats'],
             ).to(device)
             # Load state dict
             checkpoint = torch.load(final_model_path, map_location=device)
