@@ -28,6 +28,8 @@ class model(nn.Module):
         predict_hidden_feats=512,
         readout_option=False,
         drop_ratio=0.1, #default = 0.1
+        lr=lr, ##mới thêm
+        depth=depth, ##mới thêm
     ):
         super(model, self).__init__()
         emb_dim=1024
