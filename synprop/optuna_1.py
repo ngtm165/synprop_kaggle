@@ -16,12 +16,9 @@ root_dir=Path(__file__).resolve().parents[1]
 sys.path.append(str(root_dir))
 os.chdir(str(root_dir))
 
-# Import các thành phần GỐC từ model.py và data_wrapper_7.py
-try:
-    from synprop.model import model, train, inference # Import bản gốc
-    from synprop.data_wrapper_7 import data_wrapper_7
-except ImportError:
-    raise ImportError("Could not import from synprop. Check paths and ensure original model.py exists.")
+from synprop.model import model, train, inference # Import bản gốc
+from synprop.data_wrapper_7 import data_wrapper_7
+
 
 # --- Hàm đọc best_val_loss từ file log ---
 def get_best_val_loss_from_log(log_path):
@@ -126,7 +123,7 @@ def objective(trial, args):
             drop_ratio=drop_ratio,
             lr=lr, 
             depth=depth,
-            node_hid=node_hid_feats,
+            node_hid=node_hid,
             # edge_hid = edge_hid_feats,
             weight_decay=weight_decay,
             readout_option=readout_option,
