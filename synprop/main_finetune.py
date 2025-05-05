@@ -15,7 +15,7 @@ from synprop.finetune_graph import finetune
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--batch_size", type=int, default=224)
+    arg_parser.add_argument("--batch_size", type=int, default=64)
     arg_parser.add_argument("--epochs", type=int, default=100)
     arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument("--monitor_folder", type=str, default="./Data/monitor/")
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--graph_path", type=str, default='./Data/regression/e2sn2/its_new/e2sn2.pkl.gz') #binh thuong bo cho nay
     arg_parser.add_argument("--model_name", type=str, default="model.pt")
     arg_parser.add_argument("--y_column", type=str, default="ea")
-    arg_parser.add_argument("--seed", type=int, default=27407)
+    arg_parser.add_argument("--seed", type=int, default=42) #default 27407
     args = arg_parser.parse_args()
 
     os.environ["PYTHONHASHSEED"] = str(args.seed)
