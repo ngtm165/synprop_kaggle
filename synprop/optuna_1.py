@@ -122,11 +122,16 @@ def objective(trial, args):
             node_feat=node_attr,
             edge_feat=edge_attr,
             out_dim=1,
-            # Các tham số GNN sẽ lấy giá trị mặc định từ gine.py
-            # Chỉ đặt các tham số có thể tune:
             predict_hidden_feats=predict_hidden_feats,
             drop_ratio=drop_ratio,
-            # Các tham số khác không tune sẽ dùng giá trị mặc định của model() gốc
+            lr=lr, 
+            depth=depth,
+            node_hid=node_hid_feats,
+            # edge_hid = edge_hid_feats,
+            weight_decay=weight_decay,
+            readout_option=readout_option,
+            readout_f=readout_feats,
+
         ).to(device)
     except Exception as e:
          print(f"Error initializing model in trial {trial.number}: {e}")
@@ -139,7 +144,7 @@ def objective(trial, args):
         # và ghi log vào đường dẫn trong trial_args (tức là temp_log_path)
         # Hàm train gốc không trả về gì (hoặc trả về model đã train)
         train(
-            args, # Sử dụng args đã sửa đổi đường dẫn log trial_args, trial
+            trial, # Sử dụng args đã sửa đổi đường dẫn log trial_args, trial
             net,
             train_loader,
             val_loader,
@@ -253,6 +258,14 @@ def finetune_with_optuna_limited(args):
                 out_dim=1,
                 predict_hidden_feats=best_params["predict_hidden_feats"],
                 drop_ratio=best_params["drop_ratio"],
+                lr=best_params['lr'], 
+                deptho=best_params['depth'],
+                node_hido=best_params['node_hid_feats'],
+                # edge_hido=best_params['edge_hid_feats'],
+                weight_decayo=best_params['weight_decay'],
+                readout_optiono=best_params['readout_option'],
+                readout_fo=best_params['readout_feats'],
+
             ).to(device)
         except Exception as e:
             print(f"Error initializing final model: {e}")
@@ -299,6 +312,13 @@ def finetune_with_optuna_limited(args):
                 out_dim=1,
                 predict_hidden_feats=best_params["predict_hidden_feats"],
                 drop_ratio=best_params["drop_ratio"],
+                lr=best_params['lr'], 
+                deptho=best_params['depth'],
+                node_hido=best_params['node_hid_feats'],
+                # edge_hido=best_params['edge_hid_feats'],
+                weight_decayo=best_params['weight_decay'],
+                readout_optiono=best_params['readout_option'],
+                readout_fo=best_params['readout_feats'],
             ).to(device)
             # Load state dict
             checkpoint = torch.load(final_model_path, map_location=device)
@@ -353,7 +373,7 @@ if __name__ == "__main__":
     parser.add_argument("--monitor_name", type=str, default="monitor.txt")
     # Bỏ batch_size khỏi args nếu muốn tune nó bằng Optuna
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
-    parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for each Optuna trial AND final training")
+    parser.add_argument("--epochs", type=int, default=50, help="Number of epochs for each Optuna trial AND final training")
     parser.add_argument("--device", type=int, default=0, help="GPU device index to use")
     parser.add_argument("--seed", type=int, default=42, help="Random seed")
     # --- Thêm tham số cho Optuna ---
