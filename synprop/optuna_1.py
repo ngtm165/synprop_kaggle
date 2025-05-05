@@ -64,11 +64,11 @@ def objective(trial, args):
     batch_size = trial.suggest_int("batch_size", 16, 256, step=16) # Ví dụ tune batch_size
     lr = trial.suggest_float("lr", 1e-5, 1e-3, log=True)
     depth = trial.suggest_int("depth", 2, 6) # Số lớp / bước lặp T
-    node_hid = trial.suggest_categorical("node_hid_feats", [128, 256, 300, 512])
+    node_hid_feats = trial.suggest_categorical("node_hid_feats", [128, 256, 300, 512])
     # edge_hid = trial.suggest_categorical("edge_hid_feats", [128, 256, 300, 512])
     weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-4, log=True)
     readout_option = trial.suggest_categorical("readout_option", [True, False])
-    readout_f = trial.suggest_int("readout_feats", 512, 2048, step=512) if readout_option else node_hid # Kích thước readout phụ thuộc optio
+    readout_f = trial.suggest_int("readout_feats", 512, 2048, step=512) if readout_option else node_hid_feats # Kích thước readout phụ thuộc optio
 
     
     # Tạo đường dẫn file log tạm thời cho trial này
@@ -123,7 +123,7 @@ def objective(trial, args):
             drop_ratio=drop_ratio,
             lr=lr, 
             depth=depth,
-            node_hid=node_hid,
+            node_hid_feats=node_hid_feats,
             # edge_hid = edge_hid_feats,
             weight_decay=weight_decay,
             readout_option=readout_option,
@@ -257,7 +257,7 @@ def finetune_with_optuna_limited(args):
                 drop_ratio=best_params["drop_ratio"],
                 lr=best_params['lr'], 
                 depth=best_params['depth'],
-                node_hid=best_params['node_hid_feats'],
+                node_hid_feats=best_params['node_hid_feats'],
                 # edge_hid=best_params['edge_hid_feats'],
                 weight_decay=best_params['weight_decay'], ##decayo
                 readout_option=best_params['readout_option'],
@@ -311,7 +311,7 @@ def finetune_with_optuna_limited(args):
                 drop_ratio=best_params["drop_ratio"],
                 lr=best_params['lr'], 
                 depth=best_params['depth'],
-                node_hid=best_params['node_hid_feats'],
+                node_hid_feats=best_params['node_hid_feats'],
                 # edge_hid=best_params['edge_hid_feats'],
                 weight_decay=best_params['weight_decay'], ##decayo
                 readout_option=best_params['readout_option'],
