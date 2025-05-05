@@ -9,7 +9,7 @@ import sys
 root_dir=Path(__file__).resolve().parents[1]
 sys.path.append(str(root_dir))
 os.chdir(str(root_dir))
-from synprop.model_3 import model, train, inference
+from synprop.model import model, train, inference
 from synprop.data_wrapper_7 import data_wrapper_7
 
 def finetune(args):
