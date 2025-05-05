@@ -57,6 +57,8 @@ def train(
     val_loader,
     model_path,
     device,
+    lr=5e-4, ##mới thêm
+    weight_decay=1e-5, ##mới thêm
     epochs=20,
     current_epoch=0,
     best_val_loss=1e10,
