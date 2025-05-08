@@ -8,6 +8,8 @@ Best Hyperparameters:
   mlp_drop_ratio: 0.35000000000000003
   lr: 0.0005087850321101691
   weight_decay: 1.531253772688015e-06
+  batch size: 48
+  seed: 42
 
 Test Metrics:
   Test RMSE: 3.8724
