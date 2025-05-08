@@ -27,7 +27,7 @@ class model(nn.Module):
         edge_hid_feats=300, # Thêm tham số này nếu muốn kích thước ẩn cạnh khác nút
         readout_feats=1024,
         predict_hidden_feats=512,
-        readout_option=False,
+        readout_option=True, #default=False
         drop_ratio=0.1, #default = 0.1
         train_eps: bool = False # Thêm tùy chọn học epsilon
     ):
