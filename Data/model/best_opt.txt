@@ -1,0 +1,15 @@
+Best Hyperparameters:
+  gnn_depth: 3
+  gnn_node_hid_feats: 448
+  gnn_readout_option: True
+  gnn_readout_feats: 768
+  gnn_dr: 0.1
+  mlp_predict_hidden_feats: 512
+  mlp_drop_ratio: 0.35000000000000003
+  lr: 0.0005087850321101691
+  weight_decay: 1.531253772688015e-06
+
+Test Metrics:
+  Test RMSE: 3.8724
+  Test MAE: 2.9524
+  Test Loss: 15.2131
