@@ -32,7 +32,7 @@ class model(nn.Module):
         # depth=depth, ##mới thêm
     ):
         super(model, self).__init__()
-        emb_dim=1024
+        emb_dim=768 #default = 1024
         self.gnn = GNN(node_feat,edge_feat)  
 
 
