@@ -1,17 +1,17 @@
 Best Hyperparameters:
-  gnn_depth: 3
-  gnn_node_hid_feats: 448
+  gnn_depth: 4
+  gnn_node_hid_feats: 384
   gnn_readout_option: True
-  gnn_readout_feats: 768
-  gnn_dr: 0.1
-  mlp_predict_hidden_feats: 512
-  mlp_drop_ratio: 0.35000000000000003
-  lr: 0.0005087850321101691
-  weight_decay: 1.531253772688015e-06
-  batch size: 48
+  gnn_readout_feats: 384
+  gnn_dr: 0.15000000000000002
+  mlp_predict_hidden_feats: 384
+  mlp_drop_ratio: 0.45
+  lr: 0.000697845221781555
+  weight_decay: 1.0141689279931763e-05
+  batch size: 16
   seed: 42
 
 Test Metrics:
-  Test RMSE: 3.8724
-  Test MAE: 2.9524
-  Test Loss: 15.2131
+  Test RMSE: 3.9028
+  Test MAE: 2.9121
+  Test Loss: 15.0992
