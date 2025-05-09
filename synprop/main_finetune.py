@@ -15,7 +15,7 @@ from synprop.finetune_graph import finetune
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
-    arg_parser.add_argument("--batch_size", type=int, default=80)
+    arg_parser.add_argument("--batch_size", type=int, default=128)
     arg_parser.add_argument("--epochs", type=int, default=100)
     arg_parser.add_argument("--device", type=int, default=0)
     arg_parser.add_argument("--monitor_folder", type=str, default="./Data/monitor/")
