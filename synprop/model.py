@@ -22,17 +22,17 @@ class model(nn.Module):
         node_feat,
         edge_feat,
         out_dim=1, #default = 1
-        num_layer=4, #default = 3
-        node_hid_feats=384, #default = 300
-        readout_feats=384, #default = 1024
-        predict_hidden_feats=384, #default = 512
+        num_layer=2, #default = 3
+        node_hid_feats=64, #default = 300
+        readout_feats=576, #default = 1024
+        predict_hidden_feats=256, #default = 512
         readout_option=True, #default=False
-        drop_ratio=0.45, #default = 0.1
+        drop_ratio=0.35000000000000003, #default = 0.1
         # lr=lr, ##mới thêm
         # depth=depth, ##mới thêm
     ):
         super(model, self).__init__()
-        emb_dim=384 #default = 1024
+        emb_dim=576 #default = 1024
         self.gnn = GNN(node_feat,edge_feat)  
 
 
@@ -59,8 +59,8 @@ def train(
     val_loader,
     model_path,
     device,
-    lr=0.000697845221781555, ##mới thêm 5e-4
-    weight_decay=1.0141689279931763e-05, ##mới thêm 1e-5
+    lr=0.0009056847877669984, ##mới thêm 5e-4
+    weight_decay=3.1347678478418545e-05, ##mới thêm 1e-5
     epochs=20,
     current_epoch=0,
     best_val_loss=1e10,
@@ -69,7 +69,7 @@ def train(
     n_epochs = epochs
 
     loss_fn = torch.nn.MSELoss()
-    optimizer = Adam(net.parameters(), lr=0.000697845221781555, weight_decay=1.0141689279931763e-05) ##default: lr=5e-4, weight_decay=1e-5, chạy main_finetune (2. 1.3023669362312975e-05;  1.1848812109693355e-06)
+    optimizer = Adam(net.parameters(), lr=0.0009056847877669984, weight_decay=3.1347678478418545e-05) ##default: lr=5e-4, weight_decay=1e-5, chạy main_finetune (2. 1.3023669362312975e-05;  1.1848812109693355e-06)
     # optimizer = Adam(net.parameters(), lr=lr, weight_decay=weight_decay) ##default: lr=5e-4, weight_decay=1e-5
 
     for epoch in range(n_epochs):
