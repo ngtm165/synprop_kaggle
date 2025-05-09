@@ -9,10 +9,10 @@ class GNN(nn.Module):
         self,
         node_in_feats,
         edge_in_feats,
-        depth=3, #default = 5; opt = 3
-        node_hid_feats=160, #default = 300; opt = 1700
+        depth=5, #default = 5; opt = 3
+        node_hid_feats=512, #default = 300; opt = 1700
         readout_feats=1024, #default = 1024
-        dr=0.0, #default = 0.1; opt = 0.2
+        dr=0.35000000000000003, #default = 0.1; opt = 0.2
         readout_option=False, #default = True
         # lr=lr, ##mới thêm
     ):
