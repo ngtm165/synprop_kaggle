@@ -356,8 +356,8 @@ class ReactionDataset(Dataset):
             u = bond[0] # Chỉ số nút nguồn cho hướng u -> v
             v = bond[1] # Chỉ số nút nguồn cho hướng v -> u
 
-            row += [u, v]
-            col += [v, u]
+            row += [u]
+            col += [v]
 
             # # Thêm các đặc trưng cạnh mới
             order_0, order_1 = list(graph.edges(data=True))[idx][2]['order']
@@ -428,15 +428,32 @@ class ReactionDataset(Dataset):
 
             # Lấy đặc trưng của hai nguyên tử tham gia liên kết
             atom_feat_u = atom_fea_graph[u] 
-            atom_feat_v = atom_fea_graph[v]
 
-            # Tạo đặc trưng có hướng cho u -> v: Ghép đặc trưng nguyên tử nguồn u với đặc trưng liên kết
+            # Cạnh có hướng: u -> v
+            # edge_feat_graph.append(edge_fea) # Đặc trưng cho cạnh u -> v
+
             directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
             edge_feat_graph.append(directed_feature_uv)
 
-            # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
-            directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
+
+            # # Cạnh có hướng ngược lại: v -> u
+            # row.append(v)
+            # col.append(u)
+            # edge_feat_graph.append(edge_fea) # Đặc trưng cho cạnh v -> u
+
+            # # Tạo đặc trưng có hướng cho u -> v: Ghép đặc trưng nguyên tử nguồn u với đặc trưng liên kết
+            # row.append(u)
+            # col.append(v)
+            # directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
+            # edge_feat_graph.append(directed_feature_uv)
+
+            # # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
+            # row.append(v)
+            # col.append(u)
+            # directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
             # edge_feat_graph.append(directed_feature_vu)
+
+
 
 
         edge_index=torch.tensor([row,col])
