@@ -59,8 +59,13 @@ def train(
     val_loader,
     model_path,
     device,
+<<<<<<< HEAD
     lr=5e-4, ##mới thêm 5e-4
     weight_decay=1e-5, ##mới thêm 1e-5
+=======
+    lr=0.0009778033319273148, ##mới thêm 5e-4
+    weight_decay=5.548206895865455e-06, ##mới thêm 1e-5
+>>>>>>> 107b3c07ca611364a9489eff8fddf5f0fb30099b
     epochs=20,
     current_epoch=0,
     best_val_loss=1e10,
@@ -69,7 +74,11 @@ def train(
     n_epochs = epochs
 
     loss_fn = torch.nn.MSELoss()
+<<<<<<< HEAD
     optimizer = Adam(net.parameters(), lr=5e-4, weight_decay=1e-5) ##default: lr=5e-4, weight_decay=1e-5, chạy main_finetune (2. 1.3023669362312975e-05;  1.1848812109693355e-06)
+=======
+    optimizer = Adam(net.parameters(), lr=0.0009778033319273148, weight_decay=5.548206895865455e-06) ##default: lr=5e-4, weight_decay=1e-5, chạy main_finetune (2. 1.3023669362312975e-05;  1.1848812109693355e-06)
+>>>>>>> 107b3c07ca611364a9489eff8fddf5f0fb30099b
     # optimizer = Adam(net.parameters(), lr=lr, weight_decay=weight_decay) ##default: lr=5e-4, weight_decay=1e-5
 
     for epoch in range(n_epochs):
