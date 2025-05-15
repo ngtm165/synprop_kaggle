@@ -433,7 +433,7 @@ class ReactionDataset(Dataset):
             # edge_feat_graph.append(edge_fea) # Đặc trưng cho cạnh u -> v
 
             directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            edge_feat_graph.append(directed_feature_uv)
+            edge_feat_graph.append(edge_fea)
 
 
             # # Cạnh có hướng ngược lại: v -> u
