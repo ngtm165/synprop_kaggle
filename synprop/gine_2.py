@@ -47,6 +47,7 @@ class DMPNN_Hybrid_Conv(MessagePassing): # Đổi tên lớp ##BƯỚC 1,3 D-MPN
         update_input_1 = torch.cat([x, aggregated_messages], dim=-1) #mang 2
         update_input = x + aggregated_messages #mang 2.1
 
+        print(aggregated_messages.shape())
         print('update_input_1',update_input_1.__getitem__(8))
         print(update_input_1.shape())
         print('update_input',update_input.__getitem__(8))
