@@ -44,10 +44,10 @@ class DMPNN_Hybrid_Conv(MessagePassing): # Đổi tên lớp ##BƯỚC 1,3 D-MPN
         
         # --- THAY ĐỔI BƯỚC 3: CẬP NHẬT NÚT ---
         # Kết hợp thông tin nút gốc và thông điệp tổng hợp bằng cat
-        # update_input = torch.cat([x, aggregated_messages], dim=-1) #mang 2
+        update_input_1 = torch.cat([x, aggregated_messages], dim=-1) #mang 2
         update_input = x + aggregated_messages #mang 2.1
 
-        print('aggregated_messages',aggregated_messages.__getitem__(8))
+        print('update_input_1',update_input_1.__getitem__(8))
         print('update_input',update_input.__getitem__(8))
 
         # Kích thước đầu vào cho update_nn là node_hid_feats * 2
