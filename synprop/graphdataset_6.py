@@ -475,6 +475,15 @@ def main():
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
+    aggregated_messages = propagate(edge_index, x=x, edge_attr=edge_attr) 
+    
+    # --- THAY ĐỔI BƯỚC 3: CẬP NHẬT NÚT ---
+    # Kết hợp thông tin nút gốc và thông điệp tổng hợp bằng cat
+    # update_input = torch.cat([x, aggregated_messages], dim=-1) #mang 2
+    update_input = x + aggregated_messages #mang 2.1
+    print(aggregated_messages.__getitem__(8))
+    print(update_input.__getitem__(8))
+
 if __name__=='__main__':
     main()
 
