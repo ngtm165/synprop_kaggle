@@ -436,7 +436,7 @@ class ReactionDataset(Dataset):
 
             # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
             directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            # edge_feat_graph.append(directed_feature_vu)
+            edge_feat_graph.append(directed_feature_vu)
 
 
         edge_index=torch.tensor([row,col])
