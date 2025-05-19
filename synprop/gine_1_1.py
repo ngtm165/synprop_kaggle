@@ -48,7 +48,7 @@ class DMPNNInspiredGINEConv(MessagePassing):
     def message(self, x_j: torch.Tensor, edge_attr: torch.Tensor) -> torch.Tensor:
         # Bước 1: Tạo thông điệp kiểu D-MPNN (cat)
         input_message = torch.cat([x_j, edge_attr], dim=-1)
-        # input_message = ([edge_attr])
+        # input_message = (edge_attr)
 
         # message_nn chứa activation bên trong
         return self.message_nn(input_message)
