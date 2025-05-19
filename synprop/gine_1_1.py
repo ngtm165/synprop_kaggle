@@ -96,9 +96,9 @@ class GNN(nn.Module):
             # Input: node_hid_feats
             # Output: node_hid_feats
             gine_update_mlp = nn.Sequential(
-                nn.Linear(node_hid_feats, node_hid_feats * 2), # Có thể mở rộng ở giữa
+                nn.Linear(node_hid_feats, node_hid_feats), # Có thể mở rộng ở giữa *2 ớ cuối
                 nn.ReLU(),                                  # Activation
-                nn.Linear(node_hid_feats * 2, node_hid_feats)
+                nn.Linear(node_hid_feats, node_hid_feats) #*2 ở đầu
             )
 
             conv_layer = DMPNNInspiredGINEConv( # Sử dụng lớp GNN lai mới
