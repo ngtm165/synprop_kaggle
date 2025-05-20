@@ -89,11 +89,17 @@ class GNN(nn.Module):
             # MLP cho message_nn (Bước 1 - D-MPNN style)
             # Input: cat(node_hid_feats, edge_hid_feats)
             # Output: node_hid_feats (để có thể cộng với (1+eps)x_i)
-            message_mlp = nn.Sequential(
-                nn.Linear(node_hid_feats + edge_hid_feats, node_hid_feats),
-                nn.ReLU() # Activation bên trong message_nn
-            )
+            # message_mlp = nn.Sequential(
+            #     nn.Linear(node_hid_feats + edge_hid_feats, node_hid_feats),
+            #     nn.ReLU() # Activation bên trong message_nn
+            # )
 
+            # MLP W_msg (message_nn) - Định nghĩa MỚI cho message chỉ dùng edge_attr
+            message_mlp = nn.Sequential(
+                nn.Linear(edge_hid_feats, node_hid_feats), # <<< THAY ĐỔI Ở ĐÂY
+                nn.ReLU()
+            )
+            
             # MLP cho nn (MLP cập nhật cuối của GINE - Bước 3)
             # Input: node_hid_feats
             # Output: node_hid_feats
