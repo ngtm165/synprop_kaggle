@@ -39,16 +39,24 @@ class DMPNNInspiredGINEConv(MessagePassing):
     def forward(self, x: torch.Tensor, edge_index: torch.Tensor,
                 edge_attr: torch.Tensor) -> torch.Tensor:
         # Bước 1 (message) & 2 (aggregate)
-        aggregated_messages = self.propagate(edge_index, x=x, edge_attr=edge_attr)
+        # aggregated_messages = self.propagate(edge_index, x=x, edge_attr=edge_attr) #1.1', #1.1
+        aggregated_messages = self.propagate(edge_index, edge_attr=edge_attr) #1.1'.2
         # Bước 3 (update) kiểu GINE
         out = (1 + self.eps) * x + aggregated_messages
         out = self.nn(out) # MLP cuối (nn chứa activation bên trong)
         return out
 
-    def message(self, x_j: torch.Tensor, edge_attr: torch.Tensor) -> torch.Tensor:
+    # def message(self, x_j: torch.Tensor, edge_attr: torch.Tensor) -> torch.Tensor:
+    #     # Bước 1: Tạo thông điệp kiểu D-MPNN (cat)
+    #     # input_message = torch.cat([x_j, edge_attr], dim=-1) #1.1
+    #     input_message = edge_attr #1.1.'
+
+    #     # message_nn chứa activation bên trong
+    #     return self.message_nn(input_message)
+
+    def message(self, edge_attr: torch.Tensor) -> torch.Tensor:
         # Bước 1: Tạo thông điệp kiểu D-MPNN (cat)
-        # input_message = torch.cat([x_j, edge_attr], dim=-1)
-        input_message = edge_attr
+        input_message = edge_attr #1.1'.2
 
         # message_nn chứa activation bên trong
         return self.message_nn(input_message)
@@ -86,15 +94,15 @@ class GNN(nn.Module):
 
         self.gnn_layers = nn.ModuleList()
         for _ in range(self.depth):
-            # MLP cho message_nn (Bước 1 - D-MPNN style)
+            # MLP cho message_nn (Bước 1 - D-MPNN style) 
             # Input: cat(node_hid_feats, edge_hid_feats)
             # Output: node_hid_feats (để có thể cộng với (1+eps)x_i)
-            # message_mlp = nn.Sequential(
+            # message_mlp = nn.Sequential(                                     #frozen 1.1
             #     nn.Linear(node_hid_feats + edge_hid_feats, node_hid_feats),
             #     nn.ReLU() # Activation bên trong message_nn
             # )
 
-            # MLP W_msg (message_nn) - Định nghĩa MỚI cho message chỉ dùng edge_attr
+            # MLP W_msg (message_nn) - Định nghĩa MỚI cho message chỉ dùng edge_attr #1.1', 1.1'.2
             message_mlp = nn.Sequential(
                 nn.Linear(edge_hid_feats, node_hid_feats), # <<< THAY ĐỔI Ở ĐÂY
                 nn.ReLU()
