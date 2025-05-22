@@ -94,9 +94,9 @@ class GNN(nn.Module):
 
         self.gnn_layers = nn.ModuleList()
         for _ in range(self.depth):
-            MLP cho message_nn (Bước 1 - D-MPNN style) 
-            Input: cat(node_hid_feats, edge_hid_feats)
-            Output: node_hid_feats (để có thể cộng với (1+eps)x_i)
+            # MLP cho message_nn (Bước 1 - D-MPNN style) 
+            # Input: cat(node_hid_feats, edge_hid_feats)
+            # Output: node_hid_feats 
             message_mlp = nn.Sequential(                                     
                 nn.Linear(node_hid_feats + edge_hid_feats, node_hid_feats),
                 nn.ReLU() # Activation bên trong message_nn
