@@ -395,11 +395,18 @@ class ReactionDataset(Dataset):
             changes = add_vectors (edge_fea1, edge_fea2) #signma changes, pi changes, conjugated changes
             # print (changes)
 
+            # if standard_order == 0 and order_0 == order_1: #unchaged
+            #     edge_fea3 = edge_fea1 + changes[:2]
+            # elif standard_order > 0 or standard_order < 0: 
+            #     edge_fea3 = edge_fea1 + changes[:2] if order_0 > order_1 else edge_fea2 + changes[:2]
+            # else: edge_fea3 = [0,0,0,0,0]
+
             if standard_order == 0 and order_0 == order_1: #unchaged
-                edge_fea3 = edge_fea1 + changes[:2]
+                edge_fea3 = edge_fea1 
             elif standard_order > 0 or standard_order < 0: 
-                edge_fea3 = edge_fea1 + changes[:2] if order_0 > order_1 else edge_fea2 + changes[:2]
-            else: edge_fea3 = [0,0,0,0,0]
+                edge_fea3 = edge_fea1 if order_0 > order_1 else edge_fea2
+            else: edge_fea3 = [0,0,0]
+
 
             total_standard_order = calculate_standard_order(graph, standard_order)
 
@@ -422,8 +429,8 @@ class ReactionDataset(Dataset):
                 edge_aromatic = [0]
             
             # print(edge_fea3)
-            edge_fea = edge_fea3 + edge_fea5 #edge_fea1 + edge_fea2 + edge_fea5 
-
+            edge_fea = edge_fea3 + [standard_order] #+ edge_fea5 #edge_fea1 + edge_fea2 + edge_fea5
+            
             # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
 
             # Lấy đặc trưng của hai nguyên tử tham gia liên kết
@@ -452,9 +459,9 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/phosphatase/phosphatase.csv'
-    graph_path='./Data/regression/phosphatase/its_new/phosphatase.pkl.gz'
-    target='Conversion'
+    data_path='./Data/regression/lograte/lograte.csv'
+    graph_path='./Data/regression/lograte/its_new/lograte.pkl.gz'
+    target='lograte'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
