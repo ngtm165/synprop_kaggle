@@ -429,7 +429,7 @@ class ReactionDataset(Dataset):
                 edge_aromatic = [0]
             
             # print(edge_fea3)
-            edge_fea = edge_fea1 + edge_fea2 + [standard_order] #edge_fea3 + [standard_order] #+ edge_fea5 
+            edge_fea = edge_fea3 + [standard_order] #+ edge_fea5 #edge_fea1 + edge_fea2 + [standard_order]
             
             # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
 

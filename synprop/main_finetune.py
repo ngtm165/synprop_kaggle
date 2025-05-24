@@ -28,7 +28,7 @@ if __name__ == "__main__":
     arg_parser.add_argument("--graph_path", type=str, default='./Data/regression/rad6re/its_new/rad6re.pkl.gz') #binh thuong bo cho nay
     arg_parser.add_argument("--model_name", type=str, default="model.pt")
     arg_parser.add_argument("--y_column", type=str, default="dh")
-    arg_parser.add_argument("--seed", type=int, default=42) #default 27407
+    arg_parser.add_argument("--seed", type=int, default=27407) #default 27407
     args = arg_parser.parse_args()
 
     os.environ["PYTHONHASHSEED"] = str(args.seed)
