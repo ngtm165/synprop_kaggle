@@ -459,9 +459,9 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/lograte/lograte.csv'
-    graph_path='./Data/regression/lograte/its_new/lograte.pkl.gz'
-    target='lograte'
+    data_path='./Data/regression/rad6re/rad6re.csv'
+    graph_path='./Data/regression/rad6re/its_new/rad6re.pkl.gz'
+    target='dh'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
@@ -471,7 +471,7 @@ def main():
     all_edge_attrs = []
     all_node_attrs = []
     all_ys = []
-    output_npz_file = 'lograte_processed_data.npz'
+    output_npz_file = 'rad6re_processed_data.npz'
 
     print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
     for i in range(len(graphdata)):
