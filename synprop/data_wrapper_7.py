@@ -8,7 +8,7 @@ import numpy as np
 root_dir=str(Path(__file__).resolve().parents[1])
 sys.path.append(root_dir)
 os.chdir(root_dir)
-from synprop.graphdataset_5 import ReactionDataset #or graphdataset 0/2/3/4/5 cho new, graphdataset_1 cho stone age
+from synprop.graphdataset_3 import ReactionDataset #or graphdataset 0/2/3/4/5 cho new, graphdataset_1 cho stone age
 
 class data_wrapper_7(object):
     def __init__(self,data_path,graph_path,target,batch_size,num_workers,valid_size,test_size,):
