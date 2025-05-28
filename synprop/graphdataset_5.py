@@ -429,7 +429,7 @@ class ReactionDataset(Dataset):
                 edge_aromatic = [0]
             
             # print(edge_fea3)
-            edge_fea = edge_fea3 + [standard_order] #+ edge_fea5 #edge_fea1 + edge_fea2 + [standard_order]
+            edge_fea = edge_fea1 + edge_fea2 + [standard_order] #+ edge_fea5 #edge_fea3 + [standard_order]
             
             # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
 
@@ -464,6 +464,104 @@ def main():
     target='lograte'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
+
+
+        # --- Thu thập dữ liệu từ Dataset ---
+    all_edge_indices = []
+    all_edge_attrs = []
+    all_node_attrs = []
+    all_ys = []
+    output_npz_file = 'lograte_processed_data.npz'
+
+    print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
+    for i in range(len(graphdata)):
+        try:
+            data_item = graphdata[i]
+            
+            # Chuyển tensor sang NumPy array để lưu
+            all_edge_indices.append(data_item.edge_index.numpy())
+            all_edge_attrs.append(data_item.edge_attr.numpy())
+            all_node_attrs.append(data_item.x.numpy()) # node_attr là data_item.x
+            all_ys.append(data_item.y.numpy())         # y là data_item.y
+            
+            print(f"  Đã xử lý mẫu {i+1}/{len(graphdata)}")
+            print(f"    Node features shape: {data_item.x.shape}")
+            print(f"    Edge index shape: {data_item.edge_index.shape}")
+            print(f"    Edge features shape: {data_item.edge_attr.shape}")
+            print(f"    Label shape: {data_item.y.shape}")
+
+        except Exception as e:
+            print(f"Lỗi khi xử lý mẫu {i}: {e}")
+            # Quyết định xem có nên bỏ qua mẫu lỗi hay dừng hẳn
+            # continue 
+            # raise
+
+    # 1. Tạo mảng object tường minh cho edge_indices
+    if all_edge_indices: # Kiểm tra nếu danh sách không rỗng
+        num_samples_ei = len(all_edge_indices)
+        edge_indices_to_save = np.empty(num_samples_ei, dtype=object)
+        for i in range(num_samples_ei):
+            edge_indices_to_save[i] = all_edge_indices[i]
+    else:
+        edge_indices_to_save = np.array([], dtype=object)
+    
+    # 2. Tạo mảng object tường minh cho edge_attrs
+    if all_edge_attrs: # Kiểm tra nếu danh sách không rỗng
+        num_samples_ea = len(all_edge_attrs)
+        edge_attrs_to_save = np.empty(num_samples_ea, dtype=object)
+        for i in range(num_samples_ea):
+            edge_attrs_to_save[i] = all_edge_attrs[i]
+    else:
+        edge_attrs_to_save = np.array([], dtype=object)
+    
+    # 3. Tạo mảng object tường minh cho node_attrs
+    if all_node_attrs: # Kiểm tra nếu danh sách không rỗng
+        num_samples_na = len(all_node_attrs)
+        node_attrs_to_save = np.empty(num_samples_na, dtype=object)
+        for i in range(num_samples_na):
+            node_attrs_to_save[i] = all_node_attrs[i]
+    else:
+        node_attrs_to_save = np.array([], dtype=object)
+    
+    # 4. Tạo mảng object tường minh cho ys
+    if all_ys: # Kiểm tra nếu danh sách không rỗng
+        num_samples_y = len(all_ys)
+        ys_to_save = np.empty(num_samples_y, dtype=object)
+        for i in range(num_samples_y):
+            ys_to_save[i] = all_ys[i]
+    else:
+        ys_to_save = np.array([], dtype=object)
+    
+    # --- Lưu vào file .npz sử dụng các mảng object đã tạo tường minh ---
+    print(f"\nĐang lưu dữ liệu vào file: {output_npz_file}")
+    np.savez_compressed(output_npz_file,
+                        edge_indices=edge_indices_to_save,
+                        edge_attrs=edge_attrs_to_save,
+                        node_attrs=node_attrs_to_save,
+                        ys=ys_to_save)
+    
+    print(f"Đã lưu thành công dữ liệu vào '{output_npz_file}'.")
+    
+    # --- Cách tải lại dữ liệu (ví dụ) ---
+    print("\n--- Ví dụ cách tải lại dữ liệu ---")
+    loaded_data = np.load(output_npz_file, allow_pickle=True)
+    
+    # Truy cập dữ liệu đã tải
+    loaded_edge_indices = loaded_data['edge_indices']
+    loaded_edge_attrs = loaded_data['edge_attrs']
+    loaded_node_attrs = loaded_data['node_attrs']
+    loaded_ys = loaded_data['ys']
+    
+    if len(loaded_node_attrs) > 0:
+        print(f"Số lượng mẫu đã tải: {len(loaded_node_attrs)}")
+        print(f"  Shape của node_attrs của mẫu đầu tiên: {loaded_node_attrs[0].shape if hasattr(loaded_node_attrs[0], 'shape') else type(loaded_node_attrs[0])}")
+        print(f"  Shape của edge_indices của mẫu đầu tiên: {loaded_edge_indices[0].shape if hasattr(loaded_edge_indices[0], 'shape') else type(loaded_edge_indices[0])}")
+        # In ra giá trị của edge_indices đầu tiên nếu nó có shape (2,) để kiểm tra
+        if hasattr(loaded_edge_indices[0], 'shape') and loaded_edge_indices[0].shape == (2,):
+            print(f"    Giá trị của edge_indices đầu tiên (shape (2,)): {loaded_edge_indices[0]}")
+    else:
+        print("Không có dữ liệu nào được tải.")
+
 
 if __name__=='__main__':
     main()
