@@ -475,6 +475,7 @@ def main():
     all_edge_attrs = []
     all_node_attrs = []
     all_ys = []
+    output_npz_file = 'lograte_processed_data.npz'
 
     print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
     for i in range(len(graphdata)):
