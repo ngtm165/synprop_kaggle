@@ -463,9 +463,9 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/cycloaddition/cycloaddition.csv'
-    graph_path='./Data/regression/cycloaddition/its_new/cycloaddition.pkl.gz'
-    target='G_act'
+    data_path='./Data/regression/rad6re/rad6re.csv'
+    graph_path='./Data/regression/rad6re/its_new/rad6re.pkl.gz'
+    target='dh'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(13))
 
@@ -500,7 +500,7 @@ def main():
             # raise
 
     # --- Lưu vào file .npz ---
-    output_npz_file = 'cycloaddition_processed_data.npz'
+    output_npz_file = 'rad6re_processed_data.npz'
     print(f"\nĐang lưu dữ liệu vào file: {output_npz_file}")
 
     # Sử dụng dtype=object để cho phép các mảng NumPy có hình dạng khác nhau trong danh sách
