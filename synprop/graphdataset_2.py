@@ -175,19 +175,6 @@ class ReactionDataset(Dataset):
                 edge_fea3 = edge_fea1 if order_0 > order_1 else edge_fea2
             else: edge_fea3 = [0,0,0]
 
-
-            total_standard_order = calculate_standard_order(graph, standard_order)
-
-            # Tính toán edge_fea5 dựa trên tổng standard order
-            if total_standard_order == 0:
-                edge_fea5 = [0]
-            elif total_standard_order == 1:
-                edge_fea5 = [1]
-            elif total_standard_order == -1:
-                edge_fea5 = [-1]
-            else:
-                edge_fea5 = [total_standard_order] # handle other cases
-
             #Kiểm tra thuộc aromatic
             aromatic_val = graph.nodes(data=True)[list(graph.edges(data=True))[idx][0]].get('aromatic', True)
             aromatic_onehot = [1] if aromatic_val else [0]
