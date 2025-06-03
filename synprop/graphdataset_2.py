@@ -91,8 +91,8 @@ class ReactionDataset(Dataset):
             else:
                 charge_2=one_hot(5,len(charge_list))
 
-            charge_atom = charge_1 + charge_2 #ver_3
-            charge_change = charge_1 - charge_2
+            # charge_atom = charge_1 + charge_2 #ver_3
+            charge_change = add_vectors (charge_1 - charge_2)
 
 
             #hybridization
