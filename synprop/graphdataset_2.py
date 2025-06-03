@@ -114,7 +114,6 @@ class ReactionDataset(Dataset):
             
             
             atom_fea = atom_fea1 + charge_1 + charge_change + atom_hybrid_1 + atom_hybrid_change  
-            print(atom_fea)
             atom_fea_graph.append(atom_fea)
 
         
