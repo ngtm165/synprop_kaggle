@@ -463,7 +463,7 @@ def main():
     
     data_path='./Data/regression/phosphatase/phosphatase.csv'
     graph_path='./Data/regression/phosphatase/its_new/phosphatase.pkl.gz'
-    target='ea'
+    target='Conversion'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
