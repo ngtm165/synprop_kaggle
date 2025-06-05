@@ -463,7 +463,7 @@ def main():
     
     data_path='./Data/regression/wb97xd3/wb97xd3.csv'
     graph_path='./Data/regression/wb97xd3/its_new/wb97xd3.pkl.gz'
-    target='dh'
+    target='ea'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
