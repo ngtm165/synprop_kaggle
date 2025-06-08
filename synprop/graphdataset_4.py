@@ -347,7 +347,7 @@ class ReactionDataset(Dataset):
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
             
             # atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change] #4.1 
-            atom_fea = quantum_features + e_max + [charge_change] + hcount_change + atom_hybrid_change + [neighbor_change] 
+            atom_fea = quantum_features + e_max + [charge_1] + [charge_2] + h_1 + h_2 + atom_hybrid_p_1 + atom_hybrid_p_2 + [neighbor_count_1] + [neighbor_count_1] #atom1 edge3
 
             atom_fea_graph.append(atom_fea)
 
@@ -425,7 +425,7 @@ class ReactionDataset(Dataset):
             
             # print(edge_fea3)
             # edge_fea = edge_fea1 + edge_fea2 #+ edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
-            edge_fea = edge_fea1 + edge_fea2 #atom2 edge1
+            edge_fea = changes #atom1 edge3
 
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
