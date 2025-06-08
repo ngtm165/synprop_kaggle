@@ -425,8 +425,7 @@ class ReactionDataset(Dataset):
             
             # print(edge_fea3)
             # edge_fea = edge_fea1 + edge_fea2 #+ edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
-            edge_fea = changes #+ edge_aromatic #edge_fea1 + edge_fea2 + edge_fea3 ##edge_fea1 + edge_fea2 + changes[:2]
-
+            edge_fea = edge_fea1 + edge_fea2 #atom2 edge1
 
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
