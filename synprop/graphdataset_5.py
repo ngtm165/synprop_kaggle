@@ -461,9 +461,9 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/e2sn2/e2sn2.csv'
-    graph_path='./Data/regression/e2sn2/its_new/e2sn2.pkl.gz'
-    target='ea'
+    data_path='./Data/regression/lograte/lograte.csv'
+    graph_path='./Data/regression/lograte/its_new/lograte.pkl.gz'
+    target='lograte'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
@@ -473,7 +473,7 @@ def main():
     all_edge_attrs = []
     all_node_attrs = []
     all_ys = []
-    output_npz_file = 'e2sn2_processed_data.npz'
+    output_npz_file = 'lograte_processed_data.npz'
 
     print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
     for i in range(len(graphdata)):
