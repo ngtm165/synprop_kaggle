@@ -431,7 +431,7 @@ class ReactionDataset(Dataset):
                 edge_aromatic = [0]
             
             # print(edge_fea3)
-            edge_fea = edge_fea1 + edge_fea2 + [standard_order] #+ edge_fea5 #edge_fea3 + [standard_order]
+            edge_fea = edge_fea1 + edge_fea2 #+ [standard_order] #+ edge_fea5 #edge_fea3 + [standard_order]
             
             # --- THAY ĐỔI CHÍNH Ở ĐÂY ---
 
@@ -461,9 +461,9 @@ class ReactionDataset(Dataset):
 
 def main():
     
-    data_path='./Data/regression/phosphatase/phosphatase.csv'
-    graph_path='./Data/regression/phosphatase/its_new/phosphatase.pkl.gz'
-    target='Conversion'
+    data_path='./Data/regression/wb97xd3/wb97xd3.csv'
+    graph_path='./Data/regression/wb97xd3/its_new/wb97xd3.pkl.gz'
+    target='ea'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
@@ -473,7 +473,7 @@ def main():
     all_edge_attrs = []
     all_node_attrs = []
     all_ys = []
-    output_npz_file = 'phosphatase_processed_data.npz'
+    output_npz_file = 'wb97xd3_processed_data.npz'
 
     print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
     for i in range(len(graphdata)):
