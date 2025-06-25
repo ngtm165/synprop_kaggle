@@ -463,7 +463,7 @@ def main():
     
     data_path='./Data/regression/cycloaddition/cycloaddition.csv'
     graph_path='./Data/regression/cycloaddition/its_new/cycloaddition.pkl.gz'
-    target='ea'
+    target='G_act'
     graphdata=ReactionDataset(data_path,graph_path,target)
     print(graphdata.__getitem__(8))
 
