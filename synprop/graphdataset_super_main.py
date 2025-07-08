@@ -515,7 +515,7 @@ class ReactionDataset(Dataset):
 
         # supernode
         supernode_index = len(atom_fea_graph) 
-        supernode_node_feature = [0.0]*22
+        supernode_node_feature = [0.0]*21
         supernode_edge_feature = [0.0]*6
         # print(f"Tổng số nút trước khi thêm siêu nút: {len(atom_fea_graph)}")
         # print(f"Chỉ số của siêu nút sẽ là: {supernode_index}")
