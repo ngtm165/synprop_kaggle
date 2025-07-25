@@ -435,8 +435,6 @@ class ReactionDataset(Dataset):
                     }
                 }
                 reaction_center_data.append(bond_info)
-                    
-
                 
         #RC
         RC_node_features = {}

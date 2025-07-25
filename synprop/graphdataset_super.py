@@ -208,9 +208,9 @@ def hybridization_to_spdf(hybridization):
             else:
                 f_num = 1
 
-    total = s + p_num + d_num  #thử bỏ f_num
+    total = s + p_num + d_num + f_num #thử bỏ f_num
     
-    return [s, p_num, d_num], total
+    return [s, p_num, d_num, f_num], total
     
     # if total == 0:
     #   return [0,0,0,0]
@@ -262,6 +262,8 @@ class ReactionDataset(Dataset):
         hcount_change = []
         hybrid_change = []
 
+
+        
         for i in lst_nodes:
             
             atom_data = graph.nodes(data=True)[i] #ver 7_mới
@@ -289,18 +291,9 @@ class ReactionDataset(Dataset):
             if quantum_numbers:
                 n, l, ml, ms, e = quantum_numbers
                 quantum_features = [n, l, ml, ms]  # Chuyển thành list
-                n_onehot = one_hot(n - 1, 7)  # Giả sử n tối đa là 7
-                l_onehot = one_hot(l, 4)  # l có thể từ 0 đến 3
-                ml_onehot = one_hot(ml + 3, 7)  # Giả sử ml có thể từ -3 đến 3
-                ms_onehot = [1, 0] if ms == 0.5 else [0, 1]
             else:
                 quantum_features = [0, 0, 0, 0]  # Giá trị mặc định nếu không tìm thấy
-                n_onehot = [0] * 7
-                l_onehot = [0] * 4
-                ml_onehot = [0] * 7
-                ms_onehot = [0, 0]
-                
-            quantum_onehots = n_onehot + l_onehot + ml_onehot + ms_onehot
+
 
             # Liên kết tối đa (valence electrons)
             e_max = [e]
@@ -347,7 +340,6 @@ class ReactionDataset(Dataset):
             atom_hybrid_change = add_vectors (atom_hybrid_p_1, atom_hybrid_p_2)
             
             atom_fea = quantum_features + e_max + [charge_1] + [charge_change] + h_1 + hcount_change + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change] #5.1
-            # atom_fea = quantum_features + e_max + atom_hybrid_p_1 + atom_hybrid_change + [neighbor_count_1] + [neighbor_change]  #5.2 
 
             atom_fea_graph.append(atom_fea)
 
@@ -364,13 +356,11 @@ class ReactionDataset(Dataset):
             row += [u, v]
             col += [v, u]
 
-            # # Thêm các đặc trưng cạnh mới
             order_0, order_1 = list(graph.edges(data=True))[idx][2]['order']
             standard_order = list(graph.edges(data=True))[idx][2]['standard_order']
             
             changes = []
 
-            # Kiểm tra thuộc liên hợp
             con_0, con_1 = list(graph.edges(data=True))[idx][2]['conjugated']
             bond_con_0 = [1.0] if con_0 == True else [0.0]
             bond_con_1 = [1.0] if con_1 == True else [0.0]
@@ -398,37 +388,9 @@ class ReactionDataset(Dataset):
                 edge_fea2 = [0.0,0.0,0.0]
             
             changes = add_vectors (edge_fea1, edge_fea2) #signma changes, pi changes, conjugated changes
-
-
-            if standard_order == 0 and order_0 == order_1: #unchaged
-                edge_fea3 = edge_fea1 
-            elif standard_order > 0 or standard_order < 0: 
-                edge_fea3 = edge_fea1 if order_0 > order_1 else edge_fea2
-            else: edge_fea3 = [0,0,0]
-
-
-            total_standard_order = calculate_standard_order(graph, standard_order)
-
-            # Tính toán edge_fea5 dựa trên tổng standard order
-            if total_standard_order == 0:
-                edge_fea5 = [0]
-            elif total_standard_order == 1:
-                edge_fea5 = [1]
-            elif total_standard_order == -1:
-                edge_fea5 = [-1]
-            else:
-                edge_fea5 = [total_standard_order] # handle other cases
-
-            #Kiểm tra thuộc aromatic
-            aromatic_val = graph.nodes(data=True)[list(graph.edges(data=True))[idx][0]].get('aromatic', True)
-            aromatic_onehot = [1] if aromatic_val else [0]
-            if aromatic_onehot == [1] and order_0 == 1.5 and order_1 == 1.5:
-                edge_aromatic = [1]
-            else:
-                edge_aromatic = [0]
             
             # print(edge_fea3)
-            edge_fea = edge_fea1 + edge_fea2 #+ [standard_order] #+ edge_fea5 #edge_fea3 + [standard_order]
+            edge_fea = edge_fea1 + edge_fea2 
 
             edge_feat_graph.append(edge_fea)
             edge_feat_graph.append(edge_fea)
@@ -444,22 +406,7 @@ class ReactionDataset(Dataset):
                 }
                 reaction_center_data.append(bond_info)
                     
-            #     mean = (edge_fea1[1]+edge_fea2[1])/2
-            #     if standard_order == 0 and order_0 == order_1: #unchaged
-            #         edge_fea1_RC = edge_fea1 
-            #         edge_fea2_RC = edge_fea2
-            #         edge_fea_RC = edge_fea1_RC + edge_fea2_RC #+ [standard_order] #+ edge_fea5 #edge_fea3 + [standard_order]
-            #     elif standard_order > 0 or standard_order < 0: 
-            #         edge_fea1_RC = [edge_fea1[0]]+[mean]+[1] 
-            #         edge_fea2_RC = [edge_fea2[0]]+[mean]+[1]
-                    
-            #     # else: 
-            #     #     edge_fea1_RC = [0,0,0]
-            #     #     edge_fea2_RC = [0,0,0]  
-            #         edge_fea_RC = edge_fea1_RC + edge_fea2_RC #+ [standard_order] #+ edge_fea5 #edge_fea3 + [standard_order]
-            # # edge_feat_RC.append(edge_fea_RC)
-            # edge_feat_RC += edge_fea_RC
-            # print(edge_feat_RC)
+
                 
         #RC
         RC_node_features = {}
@@ -469,17 +416,13 @@ class ReactionDataset(Dataset):
 
         num_original_atoms = len(lst_nodes_update)
 
-        # Lấy ra tập hợp các chỉ số nút duy nhất từ RC
         unique_rc_nodes = set()
         for bond_data in reaction_center_data:
             unique_rc_nodes.update(bond_data['node_features'].keys())
-
-        # Sắp xếp để đảm bảo thứ tự mapping luôn nhất quán
+            
         sorted_rc_nodes = sorted(list(unique_rc_nodes))
 
         node_mapping = {old_idx: new_idx for new_idx, old_idx in enumerate(sorted_rc_nodes, start=num_original_atoms)}
-        # print('Rection Center', (reaction_center_data))
-        # print("Node Mapping:", node_mapping)
         
         reindexed_rc_data = []
         for bond_data in reaction_center_data:
@@ -500,10 +443,12 @@ class ReactionDataset(Dataset):
                 }
             }
             reindexed_rc_data.append(new_bond_info)
-
+        unique_node_features = {}
         # 1. Lặp qua từng 'gói dữ liệu' trong danh sách chính
         for bond_data in reindexed_rc_data:
             RC_node_features.update(bond_data['node_features'])
+            unique_node_features.update(bond_data['node_features'])
+
             RC_edge_features = bond_data['edge_features']
             RC_index = bond_data['edge_indices']
             edge_feat_graph.append(RC_edge_features) 
@@ -512,7 +457,7 @@ class ReactionDataset(Dataset):
             RC_edge_index_col.append(max(RC_index))
 
         # 2. Lấy ra danh sách các feature (values) từ dictionary kết quả
-        node_RC = list(RC_node_features.values()) 
+        node_RC = [unique_node_features[n_idx] for n_idx in node_mapping.values()]
         atom_fea_graph.extend(node_RC)
         RC_row, RC_col = [], []
 
@@ -525,21 +470,16 @@ class ReactionDataset(Dataset):
 
         # supernode
         supernode_index = len(atom_fea_graph) 
-        supernode_node_feature = [0.0]*21
+        supernode_node_feature = [0.0]*23
         supernode_edge_feature = [0.0]*6
-        # print(f"Tổng số nút trước khi thêm siêu nút: {len(atom_fea_graph)}")
-        # print(f"Chỉ số của siêu nút sẽ là: {supernode_index}")
-
 
         # BƯỚC 3: THÊM NÚT VÀO DANH SÁCH
         atom_fea_graph.append(supernode_node_feature)
 
-
         # BƯỚC 4: THÊM CÁC CẠNH MỚI
         # print("\nThêm các cạnh nối siêu nút với RC:")
-        for rc_node_old_index in sorted(list(unique_rc_nodes)): # Sắp xếp để in ra cho đẹp
+        for rc_node_old_index in (list(unique_rc_nodes)): # Sắp xếp để in ra cho đẹp
             rc_node_new_index = node_mapping[rc_node_old_index]
-            # print(f"  Nối siêu nút ({supernode_index}) với nút RC {rc_node_old_index} (chỉ số mới {rc_node_new_index})")
             
             row.append(supernode_index)
             col.append(rc_node_new_index)
@@ -556,8 +496,7 @@ class ReactionDataset(Dataset):
         edge_attr=torch.tensor(np.array(edge_feat_graph),dtype=torch.float)
         node_attr=torch.tensor(np.array(atom_fea_graph),dtype=torch.float)
         y=torch.tensor(label,dtype=torch.float)
-        data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr) ##thử bỏ ',edge_attr=edge_attr'
-        # print(f"Edge_index: {edge_index}")
+        data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr) 
 
         return data
 
@@ -565,118 +504,164 @@ class ReactionDataset(Dataset):
         return len(self.graph)
 
 def main():
-    
-    data_path='./Data/regression/cycloaddition/cycloaddition.csv'
-    graph_path='./Data/regression/cycloaddition/its_new/cycloaddition.pkl.gz'
-    target='G_r'
-    graphdata=ReactionDataset(data_path,graph_path,target)
-    print(graphdata.__getitem__(8))
+    # folder_list = ['fold_0', 'fold_1', 'fold_2', 'fold_3', 'fold_4']
+    # for i in folder_list:
+    #     data_path=f'./Data/regression/lograte/{i}/aam_train.csv'
+    #     graph_path=f'./Data/regression/lograte/its_new/{i}/lograte_aam_train.pkl.gz'
+    #     target='lograte'
+    #     graphdata=ReactionDataset(data_path,graph_path,target)
+    #     print(graphdata.__getitem__(8))
+
+    #     # --- Thiết lập thư mục và file output ---
+    #     output_folder = f'output/full/lograte/{i}'                                  ## <-- THÊM MỚI: Định nghĩa tên thư mục output
+    #     os.makedirs(output_folder, exist_ok=True)                 ## <-- THÊM MỚI: Tạo thư mục nếu chưa có
+        
+
+    #         # --- Thu thập dữ liệu từ Dataset ---
+    #     all_edge_indices = []
+    #     all_edge_attrs = []
+    #     all_node_attrs = []
+    #     all_ys = []
+        
+    #     # Tạo đường dẫn file output hoàn chỉnh
+    #     output_filename = 'lograte_aam_train_processed_data.npz'
+    #     output_npz_file = os.path.join(output_folder, output_filename)
+
+    #     print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
+    #     for i in range(len(graphdata)):
+    #         try:
+    #             data_item = graphdata[i]
+                
+    #             # Chuyển tensor sang NumPy array để lưu
+    #             all_edge_indices.append(data_item.edge_index.numpy())
+    #             all_edge_attrs.append(data_item.edge_attr.numpy())
+    #             all_node_attrs.append(data_item.x.numpy()) # node_attr là data_item.x
+    #             all_ys.append(data_item.y.numpy())         # y là data_item.y
+                
+    #             print(f"  Đã xử lý mẫu {i+1}/{len(graphdata)}")
+    #             print(f"    Node features shape: {data_item.x.shape}")
+    #             print(f"    Edge index shape: {data_item.edge_index.shape}")
+    #             print(f"    Edge features shape: {data_item.edge_attr.shape}")
+    #             print(f"    Label shape: {data_item.y.shape}")
+
+    #         except Exception as e:
+    #             print(f"Lỗi khi xử lý mẫu {i}: {e}")
+    #             # Quyết định xem có nên bỏ qua mẫu lỗi hay dừng hẳn
+    #             # continue 
+    #             # raise
+
+        #----------------------------------------------------
+    folder_list = ['test', 'val', 'train']
+    for i in folder_list:
+        data_path=f'./Data/regression/barriers_rdb7/{i}.csv'
+        graph_path=f'./Data/regression/barriers_rdb7/its_new/barriers_rdb7_aam_{i}.pkl.gz'
+        target='ea'
+        graphdata=ReactionDataset(data_path,graph_path,target)
+        print(graphdata.__getitem__(8))
 
 
-        # --- Thu thập dữ liệu từ Dataset ---
-    all_edge_indices = []
-    all_edge_attrs = []
-    all_node_attrs = []
-    all_ys = []
-    output_filename = 'cycloaddition_GR_super_processed_data.npz'
-    
-        # Tạo đường dẫn file output hoàn chỉnh
-    
-    output_folder = './output/super'
-    output_npz_file = os.path.join(output_folder, output_filename)
+            # --- Thu thập dữ liệu từ Dataset ---
+        all_edge_indices = []
+        all_edge_attrs = []
+        all_node_attrs = []
+        all_ys = []
+        output_filename = f'barriers_rdb7_aam_{i}_processed_data.npz'
+        
+            # Tạo đường dẫn file output hoàn chỉnh
+        
+        output_folder = './output/full/barriers_rdb7'
+        os.makedirs(output_folder, exist_ok=True) 
+        output_npz_file = os.path.join(output_folder, output_filename)
 
-    print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
-    for i in range(len(graphdata)):
-        try:
-            data_item = graphdata[i]
-            
-            # Chuyển tensor sang NumPy array để lưu
-            all_edge_indices.append(data_item.edge_index.numpy())
-            all_edge_attrs.append(data_item.edge_attr.numpy())
-            all_node_attrs.append(data_item.x.numpy()) # node_attr là data_item.x
-            all_ys.append(data_item.y.numpy())         # y là data_item.y
-            
-            print(f"  Đã xử lý mẫu {i+1}/{len(graphdata)}")
-            print(f"    Node features shape: {data_item.x.shape}")
-            print(f"    Edge index shape: {data_item.edge_index.shape}")
-            print(f"    Edge features shape: {data_item.edge_attr.shape}")
-            print(f"    Label shape: {data_item.y.shape}")
+        print("\nĐang trích xuất dữ liệu từ từng mẫu trong dataset...")
+        for i in range(len(graphdata)):
+            try:
+                data_item = graphdata[i]
+                
+                # Chuyển tensor sang NumPy array để lưu
+                all_edge_indices.append(data_item.edge_index.numpy())
+                all_edge_attrs.append(data_item.edge_attr.numpy())
+                all_node_attrs.append(data_item.x.numpy()) # node_attr là data_item.x
+                all_ys.append(data_item.y.numpy())         # y là data_item.y
+                
+                print(f"  Đã xử lý mẫu {i+1}/{len(graphdata)}")
+                print(f"    Node features shape: {data_item.x.shape}")
+                print(f"    Edge index shape: {data_item.edge_index.shape}")
+                print(f"    Edge features shape: {data_item.edge_attr.shape}")
+                print(f"    Label shape: {data_item.y.shape}")
 
-        except Exception as e:
-            print(f"Lỗi khi xử lý mẫu {i}: {e}")
-            # Quyết định xem có nên bỏ qua mẫu lỗi hay dừng hẳn
-            # continue 
-            # raise
-
-    # 1. Tạo mảng object tường minh cho edge_indices
-    if all_edge_indices: # Kiểm tra nếu danh sách không rỗng
-        num_samples_ei = len(all_edge_indices)
-        edge_indices_to_save = np.empty(num_samples_ei, dtype=object)
-        for i in range(num_samples_ei):
-            edge_indices_to_save[i] = all_edge_indices[i]
-    else:
-        edge_indices_to_save = np.array([], dtype=object)
-    
-    # 2. Tạo mảng object tường minh cho edge_attrs
-    if all_edge_attrs: # Kiểm tra nếu danh sách không rỗng
-        num_samples_ea = len(all_edge_attrs)
-        edge_attrs_to_save = np.empty(num_samples_ea, dtype=object)
-        for i in range(num_samples_ea):
-            edge_attrs_to_save[i] = all_edge_attrs[i]
-    else:
-        edge_attrs_to_save = np.array([], dtype=object)
-    
-    # 3. Tạo mảng object tường minh cho node_attrs
-    if all_node_attrs: # Kiểm tra nếu danh sách không rỗng
-        num_samples_na = len(all_node_attrs)
-        node_attrs_to_save = np.empty(num_samples_na, dtype=object)
-        for i in range(num_samples_na):
-            node_attrs_to_save[i] = all_node_attrs[i]
-    else:
-        node_attrs_to_save = np.array([], dtype=object)
-    
-    # 4. Tạo mảng object tường minh cho ys
-    if all_ys: # Kiểm tra nếu danh sách không rỗng
-        num_samples_y = len(all_ys)
-        ys_to_save = np.empty(num_samples_y, dtype=object)
-        for i in range(num_samples_y):
-            ys_to_save[i] = all_ys[i]
-    else:
-        ys_to_save = np.array([], dtype=object)
-    
-    # --- Lưu vào file .npz sử dụng các mảng object đã tạo tường minh ---
-    print(f"\nĐang lưu dữ liệu vào file: {output_npz_file}")
-    np.savez_compressed(output_npz_file,
-                        edge_indices=edge_indices_to_save,
-                        edge_attrs=edge_attrs_to_save,
-                        node_attrs=node_attrs_to_save,
-                        ys=ys_to_save)
-    
-    print(f"Đã lưu thành công dữ liệu vào '{output_npz_file}'.")
-    
-    # --- Cách tải lại dữ liệu (ví dụ) ---
-    print("\n--- Ví dụ cách tải lại dữ liệu ---")
-    loaded_data = np.load(output_npz_file, allow_pickle=True)
-    
-    # Truy cập dữ liệu đã tải
-    loaded_edge_indices = loaded_data['edge_indices']
-    loaded_edge_attrs = loaded_data['edge_attrs']
-    loaded_node_attrs = loaded_data['node_attrs']
-    loaded_ys = loaded_data['ys']
-    
-    if len(loaded_node_attrs) > 0:
-        print(f"Số lượng mẫu đã tải: {len(loaded_node_attrs)}")
-        print(f"  Shape của node_attrs của mẫu đầu tiên: {loaded_node_attrs[0].shape if hasattr(loaded_node_attrs[0], 'shape') else type(loaded_node_attrs[0])}")
-        print(f"  Shape của edge_indices của mẫu đầu tiên: {loaded_edge_indices[0].shape if hasattr(loaded_edge_indices[0], 'shape') else type(loaded_edge_indices[0])}")
-        # In ra giá trị của edge_indices đầu tiên nếu nó có shape (2,) để kiểm tra
-        if hasattr(loaded_edge_indices[0], 'shape') and loaded_edge_indices[0].shape == (2,):
-            print(f"    Giá trị của edge_indices đầu tiên (shape (2,)): {loaded_edge_indices[0]}")
-    else:
-        print("Không có dữ liệu nào được tải.")
+            except Exception as e:
+                print(f"Lỗi khi xử lý mẫu {i}: {e}")
+                # Quyết định xem có nên bỏ qua mẫu lỗi hay dừng hẳn
+                # continue 
+                # raise
+        #----------------------------------------------------
+        # 1. Tạo mảng object tường minh cho edge_indices
+        if all_edge_indices: # Kiểm tra nếu danh sách không rỗng
+            num_samples_ei = len(all_edge_indices)
+            edge_indices_to_save = np.empty(num_samples_ei, dtype=object)
+            for i in range(num_samples_ei):
+                edge_indices_to_save[i] = all_edge_indices[i]
+        else:
+            edge_indices_to_save = np.array([], dtype=object)
+        
+        # 2. Tạo mảng object tường minh cho edge_attrs
+        if all_edge_attrs: # Kiểm tra nếu danh sách không rỗng
+            num_samples_ea = len(all_edge_attrs)
+            edge_attrs_to_save = np.empty(num_samples_ea, dtype=object)
+            for i in range(num_samples_ea):
+                edge_attrs_to_save[i] = all_edge_attrs[i]
+        else:
+            edge_attrs_to_save = np.array([], dtype=object)
+        
+        # 3. Tạo mảng object tường minh cho node_attrs
+        if all_node_attrs: # Kiểm tra nếu danh sách không rỗng
+            num_samples_na = len(all_node_attrs)
+            node_attrs_to_save = np.empty(num_samples_na, dtype=object)
+            for i in range(num_samples_na):
+                node_attrs_to_save[i] = all_node_attrs[i]
+        else:
+            node_attrs_to_save = np.array([], dtype=object)
+        
+        # 4. Tạo mảng object tường minh cho ys
+        if all_ys: # Kiểm tra nếu danh sách không rỗng
+            num_samples_y = len(all_ys)
+            ys_to_save = np.empty(num_samples_y, dtype=object)
+            for i in range(num_samples_y):
+                ys_to_save[i] = all_ys[i]
+        else:
+            ys_to_save = np.array([], dtype=object)
+        
+        # --- Lưu vào file .npz sử dụng các mảng object đã tạo tường minh ---
+        print(f"\nĐang lưu dữ liệu vào file: {output_npz_file}")
+        np.savez_compressed(output_npz_file,
+                            edge_indices=edge_indices_to_save,
+                            edge_attrs=edge_attrs_to_save,
+                            node_attrs=node_attrs_to_save,
+                            ys=ys_to_save)
+        
+        print(f"Đã lưu thành công dữ liệu vào '{output_npz_file}'.")
+        
+        # --- Cách tải lại dữ liệu (ví dụ) ---
+        print("\n--- Ví dụ cách tải lại dữ liệu ---")
+        loaded_data = np.load(output_npz_file, allow_pickle=True)
+        
+        # Truy cập dữ liệu đã tải
+        loaded_edge_indices = loaded_data['edge_indices']
+        loaded_edge_attrs = loaded_data['edge_attrs']
+        loaded_node_attrs = loaded_data['node_attrs']
+        loaded_ys = loaded_data['ys']
+        
+        if len(loaded_node_attrs) > 0:
+            print(f"Số lượng mẫu đã tải: {len(loaded_node_attrs)}")
+            print(f"  Shape của node_attrs của mẫu đầu tiên: {loaded_node_attrs[0].shape if hasattr(loaded_node_attrs[0], 'shape') else type(loaded_node_attrs[0])}")
+            print(f"  Shape của edge_indices của mẫu đầu tiên: {loaded_edge_indices[0].shape if hasattr(loaded_edge_indices[0], 'shape') else type(loaded_edge_indices[0])}")
+            # In ra giá trị của edge_indices đầu tiên nếu nó có shape (2,) để kiểm tra
+            if hasattr(loaded_edge_indices[0], 'shape') and loaded_edge_indices[0].shape == (2,):
+                print(f"    Giá trị của edge_indices đầu tiên (shape (2,)): {loaded_edge_indices[0]}")
+        else:
+            print("Không có dữ liệu nào được tải.")
 
 
 if __name__=='__main__':
     main()
-
-
-
