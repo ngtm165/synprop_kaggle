@@ -291,18 +291,9 @@ class ReactionDataset(Dataset):
             if quantum_numbers:
                 n, l, ml, ms, e = quantum_numbers
                 quantum_features = [n, l, ml, ms]  # Chuyển thành list
-                n_onehot = one_hot(n - 1, 7)  # Giả sử n tối đa là 7
-                l_onehot = one_hot(l, 4)  # l có thể từ 0 đến 3
-                ml_onehot = one_hot(ml + 3, 7)  # Giả sử ml có thể từ -3 đến 3
-                ms_onehot = [1, 0] if ms == 0.5 else [0, 1]
             else:
                 quantum_features = [0, 0, 0, 0]  # Giá trị mặc định nếu không tìm thấy
-                n_onehot = [0] * 7
-                l_onehot = [0] * 4
-                ml_onehot = [0] * 7
-                ms_onehot = [0, 0]
-                
-            quantum_onehots = n_onehot + l_onehot + ml_onehot + ms_onehot
+
 
             # Liên kết tối đa (valence electrons)
             e_max = [e]
@@ -365,13 +356,11 @@ class ReactionDataset(Dataset):
             row += [u, v]
             col += [v, u]
 
-            # # Thêm các đặc trưng cạnh mới
             order_0, order_1 = list(graph.edges(data=True))[idx][2]['order']
             standard_order = list(graph.edges(data=True))[idx][2]['standard_order']
             
             changes = []
 
-            # Kiểm tra thuộc liên hợp
             con_0, con_1 = list(graph.edges(data=True))[idx][2]['conjugated']
             bond_con_0 = [1.0] if con_0 == True else [0.0]
             bond_con_1 = [1.0] if con_1 == True else [0.0]
@@ -402,19 +391,9 @@ class ReactionDataset(Dataset):
             
             # print(edge_fea3)
             edge_fea = edge_fea1 + edge_fea2 
-            
-            # Lấy đặc trưng của hai nguyên tử tham gia liên kết
-            atom_feat_u = atom_fea_graph[u] 
-            atom_feat_v = atom_fea_graph[v]
 
-            # Tạo đặc trưng có hướng cho u -> v: Ghép đặc trưng nguyên tử nguồn u với đặc trưng liên kết
-            directed_feature_uv = np.concatenate((atom_feat_u, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            edge_feat_graph.append(directed_feature_uv)
-
-            # Tạo đặc trưng có hướng cho v -> u: Ghép đặc trưng nguyên tử nguồn v với đặc trưng liên kết
-            directed_feature_vu = np.concatenate((atom_feat_v, edge_fea)).tolist() # Ví dụ dùng numpy concatenate
-            edge_feat_graph.append(directed_feature_vu)
-
+            edge_feat_graph.append(edge_fea)
+            edge_feat_graph.append(edge_fea)
 
             if any(x != 0 for x in changes):
                 bond_info = {
@@ -436,16 +415,13 @@ class ReactionDataset(Dataset):
         RC_edge_index_col = []
         atom_fea_graph_RC, edge_feat_graph_RC = [], []
         row_RC, col_RC = [], []
-
+        
         num_original_atoms = len(lst_nodes_update)
 
-        # Lấy ra tập hợp các chỉ số nút duy nhất từ RC
         unique_rc_nodes = set()
         for bond_data in reaction_center_data:
             unique_rc_nodes.update(bond_data['node_features'].keys())
             
-
-        # Sắp xếp để đảm bảo thứ tự mapping luôn nhất quán
         sorted_rc_nodes = sorted(list(unique_rc_nodes))
 
         node_mapping = {old_idx: new_idx for new_idx, old_idx in enumerate(sorted_rc_nodes, start=num_original_atoms)}
@@ -455,6 +431,7 @@ class ReactionDataset(Dataset):
             # Lấy ra các chỉ số cũ
             u_old, v_old = bond_data['node_features'].keys()
             
+            # Tra cứu các chỉ số mới từ bản đồ
             u_new = node_mapping[u_old]
             v_new = node_mapping[v_old]
             
@@ -476,17 +453,8 @@ class ReactionDataset(Dataset):
 
             RC_edge_features = bond_data['edge_features']
             RC_index = bond_data['edge_indices']
-            u_new, v_new = list(bond_data['node_features'].keys()) # Lấy 2 nút mới
-   
-            # Lấy đặc trưng tương ứng của 2 nút này
-            atom_feat_rc_u = bond_data['node_features'][u_new]
-            atom_feat_rc_v = bond_data['node_features'][v_new]
-            # BƯỚC THAY ĐỔI: TẠO ĐẶC TRƯNG CẠNH CÓ HƯỚNG CHO RC
-            directed_feature_rc_uv = atom_feat_rc_u + RC_edge_features
-            edge_feat_graph_RC.append(directed_feature_rc_uv)
-            directed_feature_rc_vu = atom_feat_rc_v + RC_edge_features
-            edge_feat_graph_RC.append(directed_feature_rc_vu)
-            
+            edge_feat_graph_RC.append(RC_edge_features) 
+            edge_feat_graph_RC.append(RC_edge_features) 
             RC_edge_index_row.append(min(RC_index))
             RC_edge_index_col.append(max(RC_index))
 
@@ -501,7 +469,7 @@ class ReactionDataset(Dataset):
             RC_col.extend(a)
         row_RC += RC_row
         col_RC += RC_col
-        
+
         # supernode
         supernode_index = len(atom_fea_graph) 
         supernode_node_feature = [0.0]*23
@@ -509,23 +477,21 @@ class ReactionDataset(Dataset):
         atom_fea_graph_super, edge_feat_graph_super = [], []
         row_super, col_super = [], []
 
+        # BƯỚC 3: THÊM NÚT VÀO DANH SÁCH
         atom_fea_graph_super.append(supernode_node_feature)
 
-        for rc_node_old_index in (list(unique_rc_nodes)):
+        # BƯỚC 4: THÊM CÁC CẠNH MỚI
+        # print("\nThêm các cạnh nối siêu nút với RC:")
+        for rc_node_old_index in (list(unique_rc_nodes)): # Sắp xếp để in ra cho đẹp
             rc_node_new_index = node_mapping[rc_node_old_index]
-            rc_node_feature = RC_node_features[rc_node_new_index]
             
-            # BƯỚC THAY ĐỔI: TẠO ĐẶC TRƯNG CÓ HƯỚNG
-            directed_feat_rc_to_super = rc_node_feature + supernode_edge_feature             # Hướng từ nút RC -> supernode
-            edge_feat_graph_super.append(directed_feat_rc_to_super)
-            directed_feat_super_to_rc = supernode_node_feature + supernode_edge_feature      # Hướng từ supernode -> nút RC
-            edge_feat_graph_super.append(directed_feat_super_to_rc)
+            row_super.append(supernode_index)
+            col_super.append(rc_node_new_index)
+            edge_feat_graph_super.append(supernode_edge_feature)
             
             row_super.append(rc_node_new_index)
             col_super.append(supernode_index)
-            row_super.append(supernode_index)
-            col_super.append(rc_node_new_index)
-
+            edge_feat_graph_super.append(supernode_edge_feature)
 
         edge_index=torch.tensor([row,col])
         edge_attr=torch.tensor(np.array(edge_feat_graph),dtype=torch.float)
@@ -546,6 +512,9 @@ class ReactionDataset(Dataset):
         data_super= Data(x=node_attr_super,y=y_super,edge_index=edge_index_super,edge_attr=edge_attr_super) 
         
         return data, data_RC, data_super
+
+    def __len__(self):
+        return len(self.graph)
 
     def __len__(self):
         return len(self.graph)
@@ -583,9 +552,9 @@ def main():
     folder_list = ['test', 'val', 'train']
     for split in folder_list:
         print(f"--- BẮT ĐẦU XỬ LÝ TẬP: {split.upper()} ---")
-        data_path = f'./Data/regression/barriers_rdb7/{split}.csv'
-        graph_path = f'./Data/regression/barriers_rdb7/its_new/barriers_rdb7_aam_{split}.pkl.gz'
-        target = 'ea'
+        data_path = f'./Data/regression/barriers_cycloadd/{split}.csv'
+        graph_path = f'./Data/regression/barriers_cycloadd/its_new/barriers_cycloadd_aam_{split}.pkl.gz'
+        target = 'G_act'
         
         # Khởi tạo dataset
         graphdata = ReactionDataset(data_path, graph_path, target)
@@ -632,19 +601,19 @@ def main():
                 print(f"Lỗi khi xử lý mẫu {i} trong tập {split}: {e}")
 
         # --- Lưu dữ liệu đã xử lý vào các tệp NPZ ---
-        output_folder = './output/RC/directed/barriers_rdb7'
+        output_folder = './output/RC/super/barriers_cycloadd'
         os.makedirs(output_folder, exist_ok=True) 
 
         # 1. Lưu dữ liệu đồ thị BÌNH THƯỜNG
-        path_normal = os.path.join(output_folder, f'barriers_rdb7_aam_{split}_normal.npz')
+        path_normal = os.path.join(output_folder, f'barriers_cycloadd_aam_{split}_normal.npz')
         save_data_to_npz(normal_data['na'], normal_data['ei'], normal_data['ea'], normal_data['y'], path_normal)
         
         # 2. Lưu dữ liệu đồ thị RC
-        path_rc = os.path.join(output_folder, f'barriers_rdb7_aam_{split}_rc.npz')
+        path_rc = os.path.join(output_folder, f'barriers_cycloadd_aam_{split}_rc.npz')
         save_data_to_npz(rc_data['na'], rc_data['ei'], rc_data['ea'], rc_data['y'], path_rc)
 
         # 3. Lưu dữ liệu đồ thị SUPERNODE
-        path_super = os.path.join(output_folder, f'barriers_rdb7_aam_{split}_super.npz')
+        path_super = os.path.join(output_folder, f'barriers_cycloadd_aam_{split}_super.npz')
         save_data_to_npz(super_data['na'], super_data['ei'], super_data['ea'], super_data['y'], path_super)
         
         print(f"--- HOÀN TẤT XỬ LÝ TẬP: {split.upper()} ---\n")
