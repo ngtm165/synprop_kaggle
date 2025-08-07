@@ -20,7 +20,7 @@ hybridization = ['SP', 'SP2', 'SP3', 'other']
 valence = [1, 2, 3, 4, 5, 6, 'other']
 
 bond_type1 = [1, 2, 3, 'other']
-bond_typrdb7 = ['normal', 'increase', 'decrease', 'other']
+bond_type2 = ['normal', 'increase', 'decrease', 'other']
 
 def read_data(data_path, graph_path, target):
     graph, labels = [], []
@@ -424,7 +424,7 @@ class ReactionDataset(Dataset):
             
         sorted_rc_nodes = sorted(list(unique_rc_nodes))
 
-        node_mapping = {old_idx: new_idx for new_idx, old_idx in enumerate(sorted_rc_nodes, start=num_original_atoms)}
+        node_mapping = {old_idx: new_idx for new_idx, old_idx in enumerate(sorted_rc_nodes, start=0)}
         
         reindexed_rc_data = []
         for bond_data in reaction_center_data:
@@ -498,12 +498,14 @@ class ReactionDataset(Dataset):
         node_attr=torch.tensor(np.array(atom_fea_graph),dtype=torch.float)
         y=torch.tensor(label,dtype=torch.float)
         data= Data(x=node_attr,y=y,edge_index=edge_index,edge_attr=edge_attr) 
+
         
         edge_index_RC=torch.tensor([row_RC,col_RC])
         edge_attr_RC=torch.tensor(np.array(edge_feat_graph_RC),dtype=torch.float)
         node_attr_RC=torch.tensor(np.array(atom_fea_graph_RC),dtype=torch.float)
         y_RC=torch.tensor(label,dtype=torch.float)
         data_RC= Data(x=node_attr_RC,y=y_RC,edge_index=edge_index_RC,edge_attr=edge_attr_RC) 
+
         
         edge_index_super=torch.tensor([row_super,col_super])
         edge_attr_super=torch.tensor(np.array(edge_feat_graph_super),dtype=torch.float)
@@ -565,18 +567,19 @@ def main():
     của đồ thị Normal, RC, và Supernode vào các file .npz riêng biệt.
     """
     folder_list = ['test', 'val', 'train']
-    base_data_path = './Data/regression/barriers_rdb7'
-    output_folder = './output/RC/nhap/barriers_rdb7'
+    base_data_path = './Data/regression/barriers_cycloadd'
+    output_folder = './output/RC/nhap1/barriers_cycloadd'
     os.makedirs(output_folder, exist_ok=True) 
 
     for dataset_type in folder_list:
         print(f"\n{'='*20} BẮT ĐẦU XỬ LÝ: {dataset_type.upper()} {'='*20}")
         data_path = os.path.join(base_data_path, f'{dataset_type}.csv')
-        graph_path = os.path.join(base_data_path, 'its_new', f'barriers_rdb7_aam_{dataset_type}.pkl.gz')
-        target = 'ea'
+        graph_path = os.path.join(base_data_path, 'its_new', f'barriers_cycloadd_aam_{dataset_type}.pkl.gz')
+        target = 'G_act'
         
         # 1. Khởi tạo Dataset
         graphdata = ReactionDataset(data_path, graph_path, target)
+        print(graphdata.__getitem__(8))
 
         # 2. Chuẩn bị cấu trúc để lưu trữ dữ liệu
         # Sử dụng từ điển để quản lý dữ liệu cho từng loại đồ thị
@@ -622,7 +625,7 @@ def main():
                 print(f"\n⚠️ Không có dữ liệu để lưu cho loại '{name}' trong tập '{dataset_type}'. Bỏ qua.")
                 continue
                 
-            output_filename = f'barriers_rdb7_aam_{dataset_type}_{name}_processed_data.npz'
+            output_filename = f'barriers_cycloadd_aam_{dataset_type}_{name}_processed_data.npz'
             output_npz_file = os.path.join(output_folder, output_filename)
             save_to_npz(data_dict, output_npz_file)
             
