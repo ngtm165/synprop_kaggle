@@ -603,7 +603,7 @@ def main():
         print(f"\n{'='*20} BẮT ĐẦU XỬ LÝ: {dataset_type.upper()} {'='*20}")
         data_path = os.path.join(base_data_path, f'{dataset_type}.csv')
         graph_path = os.path.join(base_data_path, 'its_new', f'barriers_rgd1_aam_{dataset_type}.pkl.gz')
-        target = 'G_act'
+        target = 'ea'
         
         # 1. Khởi tạo Dataset
         graphdata = ReactionDataset(data_path, graph_path, target)
