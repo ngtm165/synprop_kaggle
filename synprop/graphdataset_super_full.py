@@ -611,8 +611,8 @@ def main():
         #----------------------------------------------------
     folder_list = ['test', 'val', 'train']
     for i in folder_list:
-        data_path=f'./Data/regression/barriers_rdb7/{i}.csv'
-        graph_path=f'./Data/regression/barriers_rdb7/its_new/barriers_rdb7_aam_{i}.pkl.gz'
+        data_path=f'./Data/regression/USPTO_50k/{i}.csv'
+        graph_path=f'./Data/regression/USPTO_50k/its_new/USPTO_50k_aam_{i}.pkl.gz'
         target='ea'
         graphdata=ReactionDataset(data_path,graph_path,target)
         print(graphdata.__getitem__(8))
@@ -623,11 +623,11 @@ def main():
         all_edge_attrs = []
         all_node_attrs = []
         all_ys = []
-        output_filename = f'barriers_rdb7_aam_{i}_processed_data.npz'
+        output_filename = f'USPTO_50k_aam_{i}_processed_data.npz'
         
             # Tạo đường dẫn file output hoàn chỉnh
         
-        output_folder = './output/full/barriers_rdb7'
+        output_folder = './output/full/USPTO_50k'
         os.makedirs(output_folder, exist_ok=True) 
         output_npz_file = os.path.join(output_folder, output_filename)
 
